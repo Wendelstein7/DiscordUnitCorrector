@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 import re
 
-END_NUMBER_REGEX = re.compile("[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 DECIMALS = 2  # Option: The amount of decimals to output after conversion.
 SPACED = True # Option: Should there be a space between the number and the unit?

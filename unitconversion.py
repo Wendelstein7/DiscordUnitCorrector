@@ -1,6 +1,8 @@
 # This is the library that handles the unit conversion itself.
-# Originally created by ficolas2 (Nicolas de Pineda Gutiérrez, Horned horn, https://github.com/ficolas2) 2018/01/21
-# Modified and improved by Wendelstein7 and ficolas2
+# The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+# The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7
+
+# Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum

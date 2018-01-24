@@ -8,6 +8,11 @@
 # Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!
 # Simply add this bot to your server! You can choose to run it yourself or add the version that is updated and hosted by me [Wendelstein 7]
 
+# The unit conversion library was riginally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+# The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7
+
+# Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
+
 import discord
 from discord.ext import commands
 import random

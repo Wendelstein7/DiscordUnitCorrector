@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 Wendelstein7
+Copyright (c) 2018 Wendelstein7 and ficolas2
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+**The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21**
+**The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7**

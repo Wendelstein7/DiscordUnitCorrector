@@ -7,11 +7,18 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 import re
+from math import log10, floor
 
 END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
-DECIMALS = 2  # Option: The amount of decimals to output after conversion.
-SPACED = True # Option: Should there be a space between the number and the unit?
+
+SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True
+USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
+SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
+DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
+
+def roundsignificant(number):
+    return round(number, -int(floor(log10(abs(x))))+SIGNIFICANTFIGURES-1)
 
 class UnitType:
 
@@ -23,7 +30,7 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        numberString = str(round(value / multiple, DECIMALS))
+        numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
         if numberString[-2:] == ".0":
             numberString = numberString[:-2]
         return numberString + (' ' if SPACED else '') + self._multiples[multiple]

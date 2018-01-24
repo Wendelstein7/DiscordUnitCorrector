@@ -10,7 +10,8 @@ import re
 
 END_NUMBER_REGEX = re.compile("[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
-DECIMALS = 2
+DECIMALS = 2  # Option: The amount of decimals to output after conversion.
+SPACED = True # Option: Should there be a space between the number and the unit?
 
 class UnitType:
 
@@ -25,7 +26,7 @@ class UnitType:
         numberString = str(round(value / multiple, DECIMALS))
         if numberString[-2:] == ".0":
             numberString = numberString[:-2]
-        return numberString + self._multiples[multiple]
+        return numberString + (' ' if SPACED else '') + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -129,6 +130,7 @@ units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               
 units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
 units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
 units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
+units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
 
 #Force
 units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force

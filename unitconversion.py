@@ -1,5 +1,6 @@
 # This is the library that handles the unit conversion itself.
-# Created by Nicolas de Pineda Gutiérrez (Horned horn) (https://github.com/ficolas2) 2018/01/21
+# Originally created by ficolas2 (Nicolas de Pineda Gutiérrez, Horned horn, https://github.com/ficolas2) 2018/01/21
+# Modified and improved by Wendelstein7 and ficolas2
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
@@ -108,10 +109,10 @@ class ModificableMessage:
 units = []
 
 #Area
-units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared)", DISTANCE, 0.00064516) ) #inch squared
-units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared)", DISTANCE, 0.092903) )     #foot squared
-units.append( NormalUnit("mi(les?)? ?(\^2|squared)", DISTANCE, 2589990) )       #mile squared
-units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                       #acre
+units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516) ) #inch squared
+units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903) )     #foot squared
+units.append( NormalUnit("mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990) )       #mile squared
+units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                         #acre
 
 #Volume
 units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )                   #pint
@@ -137,7 +138,7 @@ units.append( NormalUnit("Pound(-| )?foot|lbf( |\*)?ft", TORQUE, 1.355818) )    
 units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704) )        #miles per hour
 
 #Temperature
-units.append( NormalUnit("°|º?F|((degrees?|dungarees?) )?(farenheit|freedom)", TEMPERATURE, 5/9, -32 ) )    #Degrees freedom
+units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
 
 #Pressure
 units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch

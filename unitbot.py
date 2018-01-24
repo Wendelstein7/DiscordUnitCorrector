@@ -37,7 +37,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if bot.user.id is not message.author.id:
+    if bot.user.id is not message.author.id and discord.utils.get(ctx.guild.roles, name='imperial certified') not in message.author.roles:
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
             correctionText = ("I think " + message.author.name + " meant to say: ```" + processedMessage + "```")

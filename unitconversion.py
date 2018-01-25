@@ -143,7 +143,7 @@ units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       
 units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force
 
 #Torque
-units.append( NormalUnit("Pound(-| )?foot|lbf( |\*)?ft", TORQUE, 1.355818) )    #pound-foot
+units.append( NormalUnit("Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818) )    #pound-foot
 
 #Velocity
 units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704) )        #miles per hour

@@ -56,6 +56,15 @@ async def uptime(ctx):
     runtime = (datetime.now() - starttime)
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, runtime))
 
+@bot.command()
+async def unitpedia(ctx, search: str):
+    """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
+    result = unitpedia.lookup(search)
+    if result is not "notfound":
+        await ctx.send(embed=result)
+    else:
+        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+
 with open('token', 'r') as content_file: # INFO: To run the bot yourself you must enter your bots private token in a (new) file called 'token'
     content = content_file.read()
 

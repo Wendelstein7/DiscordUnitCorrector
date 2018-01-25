@@ -23,6 +23,7 @@ from datetime import datetime, date
 from datetime import timedelta
 
 import unitconversion
+import unitpedia.py
 
 description = """A Discord bot that corrects non-SI units to SI ones!"""
 bot = commands.Bot(command_prefix='!', description=description)
@@ -37,7 +38,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if bot.user.id is not message.author.id and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles:
+    if bot.user.id is not message.author.id and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
             correctionText = ("I think " + message.author.name + " meant to say: ```" + processedMessage + "```")

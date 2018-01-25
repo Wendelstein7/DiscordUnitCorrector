@@ -161,7 +161,7 @@ units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )                  
 
 #Distance units
 units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254) )              #inch
-units.append( NormalUnit("f(oo|ee)?t|'", DISTANCE, 0.3048) )                    #foot
+units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048) )                    #foot
 units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344) )                     #mile
 units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144) )                       #yard
 

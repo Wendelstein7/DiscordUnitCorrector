@@ -23,7 +23,7 @@ from datetime import datetime, date
 from datetime import timedelta
 
 import unitconversion
-import unitpedia.py
+import unitpedia
 
 description = """A Discord bot that corrects non-SI units to SI ones!"""
 bot = commands.Bot(command_prefix='!', description=description)

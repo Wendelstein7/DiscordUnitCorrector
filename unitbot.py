@@ -23,7 +23,7 @@ from datetime import datetime, date
 from datetime import timedelta
 
 import unitconversion
-import unitpedia
+import unitpedialib
 
 description = """A Discord bot that corrects non-SI units to SI ones!"""
 bot = commands.Bot(command_prefix='!', description=description)
@@ -59,7 +59,7 @@ async def uptime(ctx):
 @bot.command()
 async def unitpedia(ctx, search: str):
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
-    result = unitpedia.lookup(search)
+    result = unitpedialib.lookup(search)
     if result is not "notfound":
         await ctx.send(embed=result)
     else:

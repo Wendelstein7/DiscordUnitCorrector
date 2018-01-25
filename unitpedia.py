@@ -28,8 +28,6 @@ class InformationArticle:
         self.embed.add_field(name="Origin", value=origin, inline=True)
         self.embed.add_field(name="SI-Unit", value=isSI, inline=True)
 
-await bot.say(embed=embed)
-
 #This information 'unitpedia' database needs expansion! Please help by putting information from WikiPedia in heref for units not already here!
 class InformationArticles:
     articles = []

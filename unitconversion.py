@@ -1,13 +1,24 @@
 # This is the library that handles the unit conversion itself.
-# Created by Nicolas de Pineda Gutiérrez (Horned horn) (https://github.com/ficolas2) 2018/01/21
+# The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+# The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7
+
+# Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 import re
+from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
-DECIMALS = 3
+
+SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True
+USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
+SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
+DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
+
+def roundsignificant(number):
+    return round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1)
 
 class UnitType:
 
@@ -19,10 +30,10 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        numberString = str(round(value / multiple, DECIMALS))
+        numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
         if numberString[-2:] == ".0":
             numberString = numberString[:-2]
-        return numberString + self._multiples[multiple]
+        return numberString + (' ' if SPACED else '') + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -108,45 +119,51 @@ class ModificableMessage:
 units = []
 
 #Area
-units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared)", DISTANCE, 0.00064516) )    #inch squared
-units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared)", DISTANCE, 0.092903) )        #foot squared
-units.append( NormalUnit("mi(les?)? ?(\^2|squared)", DISTANCE, 2589990) )          #mile squared
-units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                          #acre
+units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516) ) #inch squared
+units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903) )     #foot squared
+units.append( NormalUnit("mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990) )       #mile squared
+units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                         #acre
 
 #Volume
-units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )   #pint
-units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )    #quart
-units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )    #galon
+units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )                   #pint
+units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
+units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #galon
+units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
+units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
+units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon
+units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               #barrel
 
 #Energy
 units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
 units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
+units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
+units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
 
 #Force
-units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )    #pound-force
+units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force
 
 #Torque
 units.append( NormalUnit("Pound(-| )?foot|lbf( |\*)?ft", TORQUE, 1.355818) )    #pound-foot
 
 #Velocity
-units.append( NormalUnit("miles? per hour|mph", VELOCITY, 0.44704) )    #miles per hour
+units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704) )        #miles per hour
 
 #Temperature
-units.append( NormalUnit("°|º?F|((degrees?|dungarees?) )?(farenheit|freedom)", TEMPERATURE, 5/9, -32 ) )    #Degrees freedom
+units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
 
 #Pressure
 units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
 
 #Mass
-units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )    #ounces
-units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )     #pounds
-units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )    #stones
+units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
+units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
+units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )                  #stones
 
 #Distance units
-units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254) )  #inch
-units.append( NormalUnit("f(oo|ee)?t|'", DISTANCE, 0.3048) )        #foot
-units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344) )         #mile
-units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144) )           #yard
+units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254) )              #inch
+units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048) )                    #foot
+units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344) )                     #mile
+units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144) )                       #yard
 
 #Processes a string, converting freedom units to science units.
 def process(message):

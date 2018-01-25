@@ -1,0 +1,42 @@
+{
+  "embed": {
+    "title": "longname",
+    "description": "history",
+    "url": "link",
+    "color": 51200,
+    "thumbnail": {
+      "url": "botlogo"
+    },
+    "fields": [
+      {
+        "name": "Defenition",
+        "value": "defenition"
+      },
+      {
+        "name": "Long Name",
+        "value": "longname",
+        "inline": true
+      },
+      {
+        "name": "Abbreviation",
+        "value": "shortname",
+        "inline": true
+      },
+      {
+        "name": "Unit category",
+        "value": "category",
+        "inline": true
+      },
+      {
+        "name": "Origin",
+        "value": "origin",
+        "inline": true
+      },
+      {
+        "name": "SI-Unit",
+        "value": "isSI",
+        "inline": true
+      }
+    ]
+  }
+}

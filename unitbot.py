@@ -8,6 +8,11 @@
 # Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!
 # Simply add this bot to your server! You can choose to run it yourself or add the version that is updated and hosted by me [Wendelstein 7]
 
+# The unit conversion library was riginally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+# The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7
+
+# Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
+
 import discord
 from discord.ext import commands
 import random
@@ -18,6 +23,7 @@ from datetime import datetime, date
 from datetime import timedelta
 
 import unitconversion
+import unitpedialib
 
 description = """A Discord bot that corrects non-SI units to SI ones!"""
 bot = commands.Bot(command_prefix='!', description=description)
@@ -32,10 +38,10 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if bot.user.id is not message.author.id:
+    if bot.user.id is not message.author.id and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
-            correctionText = ("I think " + message.author.name + " meant to say: ```" + processedMessage + "```")
+            correctionText = ("I think " + (message.author.name if message.guild is not None else "you") + " meant to say: ```" + processedMessage + "```")
             await message.channel.send(correctionText)
     await bot.process_commands(message)
 
@@ -49,6 +55,15 @@ async def uptime(ctx):
     """Shows how long this instance of the bot has been online."""
     runtime = (datetime.now() - starttime)
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, runtime))
+
+@bot.command()
+async def unitpedia(ctx, search: str):
+    """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
+    result = unitpedialib.lookup(search)
+    if result is not "notfound":
+        await ctx.send(embed=result)
+    else:
+        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
 
 with open('token', 'r') as content_file: # INFO: To run the bot yourself you must enter your bots private token in a (new) file called 'token'
     content = content_file.read()

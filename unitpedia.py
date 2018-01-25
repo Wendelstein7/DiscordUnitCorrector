@@ -6,7 +6,7 @@ import re
 
 def lookup(search):
     return "notfound"
-    #TODO Add code that finds the search keyword using the regex in the information articles list. Should return the embedded info.
+    #TODO Add code that finds the search keyword using the regex in the information articles list. Should return the 'embed' of the found InformationArticle.
 
 class InformationArticle:
     def __init__( self, regexsearch, longname, shortname, category, origin, history, definition, isSI, wiki ):

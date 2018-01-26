@@ -169,7 +169,7 @@ units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254 ) )             
 units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                 #foot
 units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344 ) )                    #mile
 units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144 ) )                      #yard
-units.append( NormalUnit("nautical (mi(les?)?)?|nmi", DISTANCE, 1.85200 ) )     #nautical miles
+units.append( NormalUnit("nautical (mi(les?)?)?|nmi", DISTANCE, 1852 ) )        #nautical miles
 
 #Luminous intensity
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens

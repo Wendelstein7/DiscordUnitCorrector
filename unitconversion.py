@@ -53,7 +53,7 @@ MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( 
 TEMPERATURE = UnitType().addMultiple( "°C", 1 )
 PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
-POWER = UnitType.addMultiple( "W", 1 ).addMultiple( "fW", 10**-15 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 ).addMultiple( "PW", 10**15 )
+POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "fW", 10**-15 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 ).addMultiple( "PW", 10**15 )
 
 class Unit:
     def __init__( self, unitType, toSIMultiplication, toSIAddition ):

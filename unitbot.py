@@ -61,11 +61,14 @@ async def uptime(ctx):
 @bot.command()
 async def unitpedia(ctx, search: str):
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
-    result = unitpedialib.lookup(search)
-    if result is not "notfound":
-        await ctx.send(embed=result)
+    if search is not None:
+        result = unitpedialib.lookup(search)
+        if result is not "notfound":
+            await ctx.send(embed=result)
+        else:
+            await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
     else:
-        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+        await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 
 @bot.command()
 async def about(ctx):

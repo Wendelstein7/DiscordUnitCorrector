@@ -76,7 +76,7 @@ async def about(ctx):
     embed.add_field(name=":hash: **Developers**", value="**Googly** - Creator and main developer\n**ficolas** - Developer")
     embed.add_field(name=":symbols: **Contributing**", value="Want to help with the bot? You're welcome to do so!\n[Visit our GitHub for more information!](https://github.com/Wendelstein7/KeyStoneBot)")
     embed.add_field(name=":new: **Version information**", value="Bot version: `{}`\nDiscord.py version: `{}`\nPython version: `{}`".format(date.fromtimestamp(os.path.getmtime('unitbot.py')), discord.__version__, sys.version.split(' ')[0]), inline=True)
-    embed.add_field(name=":up: **Uptime information**", value="Bot started: `{}`\nBot uptime: `{}`".format(starttime, (datetime.now() - starttime)), inline=True)
+    embed.add_field(name=":up: **Uptime information**", value="Bot started: `{}`\nBot uptime: `{}`".format(starttime.strftime("%Y-%m-%d %H:%M"), (datetime.now().replace(microsecond=0) - starttime.replace(microsecond=0))), inline=True)
     embed.add_field(name=":free: **Adding the bot**", value="Want to add this bot to **your** server? [Click here to add it!](https://discordapp.com/oauth2/authorize?client_id=405724335525855232&scope=bot&permissions=67619905)")
     await ctx.send(embed=embed)
 

@@ -125,11 +125,12 @@ units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516)
 units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903) )     #foot squared
 units.append( NormalUnit("mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990) )       #mile squared
 units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                         #acre
+units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
 
 #Volume
 units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )                   #pint
 units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
-units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #galon
+units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
 units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
 units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
 units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon

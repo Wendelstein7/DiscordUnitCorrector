@@ -163,13 +163,17 @@ units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  
 units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
 units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )                  #stones
 units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
+units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
 
 #Distance
 units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254 ) )             #inch
 units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                 #foot
 units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344 ) )                    #mile
 units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144 ) )                      #yard
-units.append( NormalUnit("nautical (mi(les?)?)?|nmi", DISTANCE, 1852 ) )        #nautical miles
+units.append( NormalUnit("nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       #nautical miles
+units.append( NormalUnit("thou", DISTANCE, 0.0000254 ) )                        #thou
+units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fanthom
+units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    #furlong
 
 #Luminous intensity
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens

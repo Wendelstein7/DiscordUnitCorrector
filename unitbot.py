@@ -51,7 +51,7 @@ async def on_message(message):
 @bot.command()
 async def unitcorrector(ctx):
     """Lists supported units by the unit corrector bot."""
-    await ctx.send(shortprefix + 'Unit Corrector\nSupported units are:\n```inch, foot, mile, (all those squared), acre, pint, quart, gallon, foot-pound, pound-force, pound-foot, mph, ounce, pound, stone and degrees freedom```')
+    await ctx.send(shortprefix + "Supported units (the bot will correct these:)\n```Area: Inch², Foot², Mile², Acre, Rood\nVolume: pint, quart, gallon, fluid ounce, teaspoon, tablespoon, barrel\nEnergy: foot-pound, btu, calories\nForce: pound-force\nTorque: pound-foot\nVelocity: Miles per hour, knots, feet per second\nTemperature: Farenheit\nPressure: pounds per square inch\nMass: ounces, pounds, stones, grains, slug\nDistance: inch, foot, mile, yard, nautical mile, thou, fanthom, furlong\nLuminous intensity: lumens\nPower: horsepower```")
 
 @bot.command()
 async def uptime(ctx):

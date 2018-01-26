@@ -20,8 +20,8 @@ class InformationArticle:
         self.definition = definition
         self.isSI = isSI
         self.wiki = wiki
-        self.embed = discord.Embed(title=longname, colour=discord.Colour(0xc800), url=wiki, description=history)
-        self.embed.set_thumbnail(url="botlogo")
+        self.embed = discord.Embed(title=longname, colour=discord.Colour(0xc800), url=wiki, description=('{}\n\n[For more information, refer WikiPedia.]({})'.format(history, wiki)))
+        self.embed.set_thumbnail(url="https://cdn.discordapp.com/avatars/405724335525855232/c8c782f4c2de5d221d4beb203829ed9c.webp?size=256")
         self.embed.add_field(name="Defenition", value=definition)
         self.embed.add_field(name="Long Name", value=longname, inline=True)
         self.embed.add_field(name="Abbreviation", value=shortname, inline=True)

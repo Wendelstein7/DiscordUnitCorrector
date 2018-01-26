@@ -17,6 +17,9 @@ import discord
 from discord.ext import commands
 import random
 
+import os
+import sys
+
 import time
 import datetime
 from datetime import datetime, date

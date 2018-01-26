@@ -150,7 +150,7 @@ units.append( NormalUnit("Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.35581
 #Velocity
 units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )      #miles per hour
 units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )             #knots
-units.append( NormalUnit("f(oo|ee)?t(/|p)s(ec)?", VELOCITY, 0.3048 ) )          #feet per second
+units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec)?", VELOCITY, 0.3048 ) )  #feet per second
 
 #Temperature
 units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom

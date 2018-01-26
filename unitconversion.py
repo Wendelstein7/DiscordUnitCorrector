@@ -162,7 +162,7 @@ units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|p
 units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
 units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
 units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )                  #stones
-units.append( NormalUnit( "grains?", MASS, 6.479891*10**-5 ) )                  #grains
+units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
 
 #Distance
 units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254 ) )             #inch

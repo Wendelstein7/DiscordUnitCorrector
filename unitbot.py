@@ -28,7 +28,7 @@ from datetime import timedelta
 import unitconversion
 import unitpedialib
 
-description = """A Discord bot that corrects non-SI units to SI ones!"""
+description = """A Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
 bot = commands.Bot(command_prefix='!', description=description)
 
 starttime = datetime.now()
@@ -40,7 +40,7 @@ async def on_ready():
     print('Discord Unit Corrector Bot: Logged in as {} (id: {})\n'.format(bot.user.name, bot.user.id))
 
 @bot.event
-async def on_message(message):
+async def on_message(message): # Catches send messages and corrects non-SI units if neccesary. Most of the code behind this is in 'unitconversion.py'.
     if bot.user.id is not message.author.id and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
@@ -49,17 +49,22 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.command()
-async def unitcorrector(ctx):
+async def unitcorrector(ctx): # May be converted to a nice embed if needed in the future.
     """Lists supported units by the unit corrector bot."""
     await ctx.send(shortprefix + "Supported units (the bot will correct these:)\n```Area: Inch², Foot², Mile², Acre, Rood\nVolume: pint, quart, gallon, fluid ounce, teaspoon, tablespoon, barrel\nEnergy: foot-pound, btu, calories\nForce: pound-force\nTorque: pound-foot\nVelocity: Miles per hour, knots, feet per second\nTemperature: Farenheit\nPressure: pounds per square inch\nMass: ounces, pounds, stones, grains, slug\nDistance: inch, foot, mile, yard, nautical mile, thou, fanthom, furlong\nLuminous intensity: lumens\nPower: horsepower```")
 
 @bot.command()
-async def uptime(ctx):
+async def uptime(ctx): # May be deprecated, changed or removed as !about already shows the uptime.
     """Shows how long this instance of the bot has been online."""
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, (datetime.now() - starttime)))
 
 @bot.command()
-async def unitpedia(ctx, search: str):
+async def contributors(ctx) # Will be made a nice embed in the future if there are lots of contributors.
+    """Lists the (nick)names of people who have contributed to this bot."""
+    await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2```')
+
+@bot.command()
+async def unitpedia(ctx, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
     if search is not None:
         result = unitpedialib.lookup(search)
@@ -71,7 +76,7 @@ async def unitpedia(ctx, search: str):
         await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 
 @bot.command()
-async def about(ctx):
+async def about(ctx): # May be changed in the future to be send in DM to prevent malicious use for spam purposes.
     """Shows information about the bot aswell as the relevant version numbers, uptime and useful links."""
     embed = discord.Embed(title="UnitCorrector", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description="A fully functional public Discord bot that automatically corrects non-SI units (imperial, etc) to SI-ones (metric, etc) This bot will listen for any messages in Discord that contain non-SI units and when detected, reply with the message converted to SI-Units.\n\n*Are you tired of a car that weighs 100 Stones, is 10 feet high, and can drive 50 miles at 5 degrees freedom? Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!*")
     embed.set_thumbnail(url="https://cdn.discordapp.com/avatars/405724335525855232/c8c782f4c2de5d221d4beb203829ed9c.webp?size=256")

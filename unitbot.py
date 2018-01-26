@@ -59,7 +59,7 @@ async def uptime(ctx): # May be deprecated, changed or removed as !about already
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, (datetime.now() - starttime)))
 
 @bot.command()
-async def contributors(ctx) # Will be made a nice embed in the future if there are lots of contributors.
+async def contributors(ctx): # Will be made a nice embed in the future if there are lots of contributors.
     """Lists the (nick)names of people who have contributed to this bot."""
     await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2```')
 

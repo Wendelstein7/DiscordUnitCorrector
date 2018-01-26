@@ -64,7 +64,7 @@ async def contributors(ctx): # Will be made a nice embed in the future if there 
     await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2```')
 
 @bot.command()
-async def unitpedia(ctx, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
+async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
     if search is not None:
         result = unitpedialib.lookup(search)

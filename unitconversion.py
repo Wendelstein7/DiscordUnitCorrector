@@ -155,6 +155,7 @@ units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048
 
 #Temperature
 units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
+units.append( NormalUnit("(°|º|degrees?)? ?(ra?(nkine)?)", TEMPERATURE, 5/9, -273.15 ) )                    #Degrees rankine
 
 #Pressure
 units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch

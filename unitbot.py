@@ -41,7 +41,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message): # Catches send messages and corrects non-SI units if neccesary. Most of the code behind this is in 'unitconversion.py'.
-    if bot.user.id is not message.author.id and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
+    if bot.user.id is not message.author.id and message.author.bot is False and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
             correctionText = ("I think " + (message.author.name if message.guild is not None else "you") + " meant to say: ```" + processedMessage + "```")

@@ -9,9 +9,9 @@ Simply add this bot to your server! You can choose to run it yourself or use the
 
 ## Credits
 
-**The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21
+**The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21**
 
-The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7**
+**The unit conversion library has been modified and updated by ficolas2 and Wendelstein7, https://github.com/Wendelstein7**
 
 ## Cool! Let me add this bot to my server right now!
 

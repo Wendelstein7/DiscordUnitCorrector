@@ -1,0 +1,32 @@
+[
+    {
+        "Type": "Area",
+        "Name": "Meter squared",
+        "Symbol": "m^2",
+        "Regex": "m|meters?( ?\\^2|squared|²)",
+        "SI mul": 1,
+        "Targeted": false,
+        "SI": true,
+        "Wiki": "",
+        "Category": "",
+        "Origin": "",
+        "History": "",
+        "Definition": "",
+		"Multiples": [ ["m", 1], ["mm", 0.001]]
+    },
+    {
+        "Type": "Area",
+        "Name": "Inch squared",
+        "Symbol": "in",
+        "Regex": "in(ch(es)?)?( ?\\^2|squared|²)",
+        "SI mul": 0.00064516,
+        "Targeted": true,
+        "SI": false,
+        "Wiki": "",
+        "Category": "",
+        "Origin": "",
+        "History": "",
+        "Definition": ""
+    }
+    
+]

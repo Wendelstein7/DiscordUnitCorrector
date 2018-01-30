@@ -7,12 +7,12 @@
         "SI mul": 1,
         "Targeted": false,
         "SI": true,
-        "Wiki": "",
-        "Category": "",
-        "Origin": "",
-        "History": "",
-        "Definition": "",
-		"Multiples": [ ["m", 1], ["mm", 0.001]]
+        "Wiki": "https://www.google.es/",
+        "Category": "a",
+        "Origin": "a",
+        "History": "a",
+        "Definition": "a",
+        "Multiples": [ ["m", 1], ["mm", 0.001]]
     },
     {
         "Type": "Area",
@@ -22,11 +22,11 @@
         "SI mul": 0.00064516,
         "Targeted": true,
         "SI": false,
-        "Wiki": "",
-        "Category": "",
-        "Origin": "",
-        "History": "",
-        "Definition": ""
+        "Wiki": "https://www.google.es/",
+        "Category": "a",
+        "Origin": "a",
+        "History": "a",
+        "Definition": "a"
     }
     
 ]

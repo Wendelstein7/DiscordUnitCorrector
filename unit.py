@@ -14,7 +14,7 @@ class InformationArticle:
         self.isSI = dict["SI"]
         self.wiki = dict["Wiki"]
         self.embed = discord.Embed(title=self.name, colour=discord.Colour(0xc800), url=self.wiki, description=self.history)
-        self.embed.set_thumbnail(url="botlogo")
+        self.embed.set_thumbnail(url="https://cdn.discordapp.com/avatars/405724335525855232/c8c782f4c2de5d221d4beb203829ed9c.webp?size=256")
         self.embed.add_field(name="Definition", value=self.definition)
         self.embed.add_field(name="Long Name", value=self.name, inline=True)
         self.embed.add_field(name="Abbreviation", value=self.symbol, inline=True)
@@ -32,7 +32,7 @@ class Unit:
             self._toSIAddition = 0
         self.targeted = dict["Targeted"]
         self._regex = re.compile( "(" + dict["Regex"] + ")(?![a-z]|[0-9])", re.IGNORECASE )
-        self.information = InformationArticle( dict );
+        self._information = InformationArticle( dict );
 
     def toMetric( self, value ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
@@ -69,4 +69,4 @@ class Unit:
             message.setText(finalMessage)
             
     def getEmbed( self ):
-        return self.information.embed
+        return self._information.embed

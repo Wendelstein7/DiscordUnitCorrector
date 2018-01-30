@@ -59,9 +59,9 @@ for unitJson in unitsArray:
 #Finds an unit and returns the information embed message
 def lookup(search):
     for unit in allUnits:
-        if unit.find( search ) is not None:
+        if unit.find( search ):
             return unit.getEmbed()
-    return "Not found"
+    return None
 
 #Processes a string, converting freedom units to science units.
 def process(message):

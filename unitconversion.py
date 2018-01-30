@@ -18,6 +18,7 @@ SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will b
 DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
 
 def roundsignificant(number):
+    if number == 0 return 0
     return round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1)
 
 class UnitType:

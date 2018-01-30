@@ -48,6 +48,10 @@ async def on_message(message): # Catches send messages and corrects non-SI units
             await message.channel.send(correctionText)
     await bot.process_commands(message)
 
+@bot.event
+async def on_command(ctx)
+    print('[{}] Fired {} by {}'.format(datetime.now(), ctx.command, ctx.author))
+
 @bot.command()
 async def unitcorrector(ctx): # May be converted to a nice embed if needed in the future.
     """Lists supported units by the unit corrector bot."""

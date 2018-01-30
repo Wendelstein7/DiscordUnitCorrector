@@ -49,7 +49,7 @@ async def on_message(message): # Catches send messages and corrects non-SI units
     await bot.process_commands(message)
 
 @bot.event
-async def on_command(ctx)
+async def on_command(ctx):
     print('[{}] Fired {} by {}'.format(datetime.now(), ctx.command, ctx.author))
 
 @bot.command()

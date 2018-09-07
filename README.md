@@ -7,6 +7,8 @@ Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -1
 
 Simply add this bot to your server! You can choose to run it yourself or use the bot that is updated and hosted by me [Wendelstein 7](https://github.com/Wendelstein7).
 
+[You can click here to join the official UnitCorrector support and chat server](https://discord.gg/qzaVppN)
+
 ## Credits
 
 **The unit conversion library was originally created by ficolas2, https://github.com/ficolas2, 2018/01/21**
@@ -40,6 +42,8 @@ Enjoy!
 
 Nice! Feel free to fork this project and make improvements, add features and fix bugs. Once your work is ready, make a PR (Pull Request) to this REPO and we will review and possibly merge it if you did good!
 (crappy PRs will be ignored, good PRs will be merged. You will get credits if (parts of) your code got merged.)
+
+For more help: please [join the official UnitCorrector support and chat server](https://discord.gg/qzaVppN)
 
 ### How to run yourself (NOT RECCOMMENDED unless you want to develop)
 * Install the main dependency Discord.py using `python3 -m pip install -U discord.py` (make sure you got the rewrite branch!)

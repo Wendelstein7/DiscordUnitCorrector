@@ -163,12 +163,12 @@ units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|p
 #Mass
 units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
 units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
-units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
+units.append( NormalUnit( "stones?|st", MASS, 6350.2293318 ) )                  #stones
 units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
 units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
 
 #Distance
-units.append( NormalUnit("inch(es)?", DISTANCE, 0.0254 ) )                      #inch
+units.append( NormalUnit("in(ch(es)?)?|\"|''", DISTANCE, 0.0254 ) )             #inch
 units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                 #foot
 units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344 ) )                    #mile
 units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144 ) )                      #yard

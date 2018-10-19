@@ -9,7 +9,7 @@ from enum import Enum
 import re
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s+$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True

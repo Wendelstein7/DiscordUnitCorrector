@@ -130,7 +130,7 @@ units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                       
 units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
 
 #Volume
-units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )                   #pint
+units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
 units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
 units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
 units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
@@ -183,7 +183,7 @@ units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
 
 #Power
-units.append( NormalUnit("horsepower|hp", POWER, 745.699872) )                  #horsepower
+units.append( NormalUnit("horsepower", POWER, 745.699872) )                  #horsepower
 
 #Processes a string, converting freedom units to science units.
 def process(message):

@@ -9,9 +9,10 @@ from enum import Enum
 import re
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("-?[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
+UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
 SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True
 USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
@@ -50,7 +51,7 @@ VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 )
 ENERGY = UnitType().addMultiple( "J", 1 ).addMultiple( "TJ", 10**12 ).addMultiple( "GJ", 10**9 ).addMultiple( "MJ", 10**6 ).addMultiple( "kJ", 10**3 ).addMultiple( "mJ", 10**-3 ).addMultiple( "µJ", 10**-6 ).addMultiple( "nJ", 10**-9 )
 FORCE = UnitType().addMultiple( "N", 1 ).addMultiple( "kN", 10**3 ).addMultiple( "MN", 10**6 )
 TORQUE = UnitType().addMultiple( "N*m", 1 )
-VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 ).addMultiple( "km/h", 3.6 )
+VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 ).addMultiple( "km/h", 0.27777777778 )
 MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( "t", 10**6 ).addMultiple( "mg", 10**-3 ).addMultiple( "µg", 10**-6 )
 TEMPERATURE = UnitType().addMultiple( "°C", 1 )
 PRESSURE = UnitType().addMultiple( "atm", 1 )
@@ -80,6 +81,8 @@ class NormalUnit( Unit ):
 
     def convert( self, message ):
         originalText = message.getText()
+        if UNICODEMINUS:
+            originalText = originalText.replace('−', '-')
         iterator = self._regex.finditer( originalText )
         replacements = []
         for find in iterator:
@@ -130,7 +133,7 @@ units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                       
 units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
 
 #Volume
-units.append( NormalUnit( "pints?|pt|p", VOLUME, 0.473176 ) )                   #pint
+units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
 units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
 units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
 units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
@@ -157,7 +160,7 @@ units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048
 
 #Temperature
 units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
-units.append( NormalUnit("(°|º|degrees?)? ?(ra?(nkine)?)", TEMPERATURE, 5/9, -273.15 ) )                    #Degrees rankine
+units.append( NormalUnit("(°|º|degrees?)? ?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )                    #Degrees rankine
 
 #Pressure
 units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
@@ -183,7 +186,7 @@ units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
 
 #Power
-units.append( NormalUnit("horsepower|hp", POWER, 745.699872) )                  #horsepower
+units.append( NormalUnit("horsepower", POWER, 745.699872) )                  #horsepower
 
 #Processes a string, converting freedom units to science units.
 def process(message):

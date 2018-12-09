@@ -12,6 +12,7 @@ from math import log10, floor
 END_NUMBER_REGEX = re.compile("(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
+UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
 SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True
 USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
@@ -80,6 +81,8 @@ class NormalUnit( Unit ):
 
     def convert( self, message ):
         originalText = message.getText()
+        if UNICODEMINUS:
+            originalText = originalText.replace('−', '-')
         iterator = self._regex.finditer( originalText )
         replacements = []
         for find in iterator:

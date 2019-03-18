@@ -7,7 +7,7 @@ import re
 
 def lookup(search):
     for art in InformationArticles.articles:
-        if art.regexSearch.fullmatch(search, re.IGNORECASE):
+        if art.regexSearch.fullmatch(search):
             return art.embed
         
     return "notfound"
@@ -15,7 +15,7 @@ def lookup(search):
 
 class InformationArticle:
     def __init__( self, regexsearch, longname, shortname, category, origin, history, definition, isSI, wiki ):
-        self.regexSearch = re.compile(regexsearch)
+        self.regexSearch = re.compile(regexsearch, re.IGNORECASE)
         self.longname = longname
         self.shortname = shortname
         self.category = category

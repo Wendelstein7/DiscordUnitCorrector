@@ -7,7 +7,7 @@ import re
 
 def lookup(search):
     for art in InformationArticles.articles:
-        if art.regexSearch.fullmatch(search, re.IGNORECASE):
+        if art.regexSearch.fullmatch(search):
             return art.embed
         
     return "notfound"

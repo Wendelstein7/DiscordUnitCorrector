@@ -159,8 +159,8 @@ units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )             
 units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )     #feet per second
 
 #Temperature
-units.append( NormalUnit("(°|º|degrees?|dungarees?)? ?(farenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
-units.append( NormalUnit("(°|º|degrees?)? ?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )                    #Degrees rankine
+units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
+units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
 
 #Pressure
 units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch

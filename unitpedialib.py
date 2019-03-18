@@ -6,12 +6,16 @@ import discord
 import re
 
 def lookup(search):
+    for art in InformationArticles.articles:
+        if art.regexSearch.fullmatch(search):
+            return art.embed
+        
     return "notfound"
     #TODO: Add code that finds the search keyword using the regex in the information articles list. Should return the 'embed' of the found InformationArticle.
 
 class InformationArticle:
     def __init__( self, regexsearch, longname, shortname, category, origin, history, definition, isSI, wiki ):
-        self.regexSearch = regexsearch
+        self.regexSearch = re.compile(regexsearch)
         self.longname = longname
         self.shortname = shortname
         self.category = category
@@ -34,7 +38,7 @@ class InformationArticles:
     articles = []
 
     #metre
-    articles.append(InformationArticle( "(k(ilo)?|c(enti)|?m(illi)?)?m(eters?|etres?)?", "Meter", "m", "Distance", "France, 1789", """In the aftermath of the French Revolution (1789), the traditional units of measure used in the Ancien Régime were replaced. The livre monetary unit was replaced by the decimal franc, and a new unit of length was introduced which became known as the metre.""", """Length of the path travelled by light in a vacuum in ​1⁄299792458 of a second.""", "Yes", "https://en.wikipedia.org/wiki/Metre"))
+    articles.append(InformationArticle( "(k(ilo)?|c(enti)|m(illi)?)?m(eters?|etres?)?", "Meter", "m", "Distance", "France, 1789", """In the aftermath of the French Revolution (1789), the traditional units of measure used in the Ancien Régime were replaced. The livre monetary unit was replaced by the decimal franc, and a new unit of length was introduced which became known as the metre.""", """Length of the path travelled by light in a vacuum in ​1⁄299792458 of a second.""", "Yes", "https://en.wikipedia.org/wiki/Metre"))
 
     #foot
     articles.append(InformationArticle( "f(oo|ee)?t|'|′", "Foot", "ft", "Distance", "Unknown and/or uncertain.", """Historically the human body has been used to provide the basis for units of length. The foot of a white male is typically about 15.3% of his height, giving a person of 160 cm (5 ft 3 in) a foot of 245 mm and one of 180 cm (5 ft 11 in) a foot of 275 mm.""", """Defined by international agreement as equivalent to 0.3048 meters exactly.""", "No", "https://en.wikipedia.org/wiki/Foot_(unit)"))

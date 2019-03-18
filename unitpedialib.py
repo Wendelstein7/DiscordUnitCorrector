@@ -15,7 +15,7 @@ def lookup(search):
 
 class InformationArticle:
     def __init__( self, regexsearch, longname, shortname, category, origin, history, definition, isSI, wiki ):
-        self.regexSearch = re.compile(regexsearch)
+        self.regexSearch = re.compile(regexsearch, re.IGNORECASE)
         self.longname = longname
         self.shortname = shortname
         self.category = category

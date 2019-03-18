@@ -67,3 +67,9 @@ IMPORTANT: We are using the `rewrite` branch of Discord.py, keep that in mind!
 ## Memes
 
 Actually, I developed this bot before I was aware of the metric memes, but now that I've noticed and now that people have brought this to my attention, a few of them belong here, don't they? Send me the best ones so that I can include a !memes command in the future ;)
+
+## Contributors
+A few people voluntarily contributed to the Unit Corrector! Thanks a ton to:
+* Wendelstein7
+* Ficolas2
+* MAX1234567890

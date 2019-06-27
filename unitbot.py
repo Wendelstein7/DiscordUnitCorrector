@@ -83,7 +83,7 @@ async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of
         await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
 
 @unitpedia.error
-async def info_error(ctx, error):
+async def unitpedia_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 

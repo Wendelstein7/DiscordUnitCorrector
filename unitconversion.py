@@ -171,6 +171,11 @@ units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   
 units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
 units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
 units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
+units.append( NormalUnit( "troy ounces?", MASS, 31.1034768 ) )                  #troy ounces
+units.append( NormalUnit( "pennywheights?", MASS, 1.55517384 ) )                #pennywheight
+units.append( NormalUnit( "troy pounds?", MASS, 373.24172 16 ) )                #troy pound
+
+
 
 #Distance
 units.append( NormalUnit("inch(es)?", DISTANCE, 0.0254 ) )                      #inch
@@ -181,6 +186,12 @@ units.append( NormalUnit("nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       
 units.append( NormalUnit("thou", DISTANCE, 0.0000254 ) )                        #thou
 units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fanthom
 units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    #furlong
+units.append( NormalUnit("points?", DISTANCE, 0.000352778) )                    #points
+units.append( NormalUnit("picas?", DISTANCE, 0.004233) )                        #picas
+units.append( NormalUnit("links?|lis?", DISTANCE, 0.020117) )                   #links
+units.append( NormalUnit("rods?|rds?", DISTANCE, 5.029) )                       #rods
+units.append( NormalUnit("chains?|chs?", DISTANCE, 201.168) )                   #chains
+units.append( NormalUnit("leagues?|leas?", DISTANCE, 4828) )                    #leagues
 
 #Luminous intensity
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens

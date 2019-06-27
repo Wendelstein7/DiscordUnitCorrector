@@ -73,18 +73,19 @@ async def contributors(ctx): # Will be made a nice embed in the future if there 
     """Lists the (nick)names of people who have contributed to this bot."""
     await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
 
-@bot.command(rest_is_raw=True)
+@bot.command()
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
-    if search == None or search == "":
-        await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
+    result = unitpedialib.lookup(search)
+    if result != "notfound":
+        await ctx.send(embed=result)
     else:
-        result = unitpedialib.lookup(search)
-        if result != "notfound":
-            await ctx.send(embed=result)
-        else:
-            await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
-        
+        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+
+@unitpedia.error
+async def info_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 
 @bot.command()
 async def about(ctx): # May be changed in the future to be send in DM to prevent malicious use for spam purposes.

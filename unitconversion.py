@@ -41,7 +41,7 @@ class UnitType:
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
-            if value > multiple/2:
+            if abs(value) > multiple/2:
                 return self.getStringFromMultiple(value, multiple)
         return self.getStringFromMultiple( value, sortedMultiples[-1] )
 
@@ -179,7 +179,7 @@ units.append( NormalUnit( "troy ?ounces?", MASS, 31.1034768 ) )                 
 units.append( NormalUnit( "penny ?weights?", MASS, 1.55517384 ) )               #pennywheight
 units.append( NormalUnit( "troy ?pounds?", MASS, 373.2417216 ) )                #troy pound
 units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
-units.append( NormalUnit( "hundredweights?|cwt", MASS, 50802 ) )              #hundredweights
+units.append( NormalUnit( "hundredweights?|cwt", MASS, 50802 ) )                #hundredweights
 
 
 #Distance

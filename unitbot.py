@@ -63,7 +63,7 @@ async def unitcorrector(ctx): # May be converted to a nice embed if needed in th
             supportedUnits += unit.getName()
     await ctx.send(shortprefix + "UnitCorrector automatically detects and corrects users who send non-SI units in their messages.\nThe bot currently supports the following units:\n```" + supportedUnits + "```")
 
-@bot.command()
+@bot.command(hidden=True)
 async def uptime(ctx): # May be deprecated, changed or removed as !about already shows the uptime.
     """Shows how long this instance of the bot has been online."""
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, (datetime.now() - starttime)))
@@ -73,7 +73,7 @@ async def contributors(ctx): # Will be made a nice embed in the future if there 
     """Lists the (nick)names of people who have contributed to this bot."""
     await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
 
-@bot.command()
+@bot.command(rest_is_raw=True)
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
     if search == None or search == "":

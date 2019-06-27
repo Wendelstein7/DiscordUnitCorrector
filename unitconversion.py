@@ -81,7 +81,7 @@ class Unit:
 class NormalUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
         super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")(?![a-z]|[0-9])", re.IGNORECASE )
+        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
         originalText = message.getText()

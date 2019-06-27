@@ -9,7 +9,7 @@ def lookup(search):
     for art in InformationArticles.articles:
         if art.regexSearch.fullmatch(search):
             return art.embed
-        
+
     return "notfound"
     #TODO: Add code that finds the search keyword using the regex in the information articles list. Should return the 'embed' of the found InformationArticle.
 
@@ -47,18 +47,18 @@ class InformationArticles:
     articles.append(InformationArticle( "mi(les?)?", "Mile", "mi", "Distance", "Unknown and/or uncertain.", """The mile was established as part of the 1959 international yard and pound agreement reached by the United States, the United Kingdom, Canada, Australia, New Zealand, and South Africa, which resolved small but measurable differences that had arisen from separate physical standards each country had maintained for the yard.""", """The international mile is precisely equal to 1.609344 km (or 25146/15625 km as a fraction).""", "No", "https://en.wikipedia.org/wiki/Mile"))
 
     #litre
-    articles.append(InformationArticle( "(k(ilo)?|c(enti)?|m(illi)?)?L((iter|itre|tr)s?)?", "Litre", "L", "Volume", "France, 1795", "The litre was introduced in France in 1795 as one of the new \"republican units of measurement\" and defined as one cubic decimetre. One litre of liquid water has a mass of almost exactly one kilogram, due to the gram being defined in 1795 as one cubic centimetre of water at the temperature of melting ice.", "A litre is defined as a special name for a cubic decimetre or 10 centimetres × 10 centimetres × 10 centimetres, (1 L ≡ 1 dm³ ≡ 1000 cm³).", "Derived from an SI unit", "https://en.wikipedia.org/wiki/Litre"))
+    articles.append(InformationArticle( "(k(ilo)?|he(k|c)t(a|o)|c(enti)?|m(illi)?)?L((iter|itre|tr)s?)?", "Litre", "L", "Volume", "France, 1795", "The litre was introduced in France in 1795 as one of the new \"republican units of measurement\" and defined as one cubic decimetre. One litre of liquid water has a mass of almost exactly one kilogram, due to the gram being defined in 1795 as one cubic centimetre of water at the temperature of melting ice.", "A litre is defined as a special name for a cubic decimetre or 10 centimetres × 10 centimetres × 10 centimetres, (1 L ≡ 1 dm³ ≡ 1000 cm³).", "Derived from an SI unit", "https://en.wikipedia.org/wiki/Litre"))
 
     #degrees celcius
     articles.append(InformationArticle( "(°|º|degrees?)? ?(celcius|centigrade|c|science)", "Celcius Scale", "°C", "Temperature", "Sweden and France, 1742 - 1744", "In 1742, Swedish astronomer Anders Celsius (1701–1744) created a temperature scale which was the reverse of the scale now known by the name \"Celsius\": 0 represented the boiling point of water, while 100 represented the freezing point of water. In 1743, the Lyonnais physicist Jean-Pierre Christin was working independently of Celsius, and developed a scale where zero represented the freezing point of water and 100 represented the boiling point of water. In 1744, coincident with the death of Anders Celsius, the Swedish botanist Carl Linnaeus (1707–1778) reversed Celsius's scale.", "The Celsius scale was based on 0 °C for the freezing point of water and 100 °C for the boiling point of water at 1 atm pressure.", "Derived from an SI unit", "https://en.wikipedia.org/wiki/Celsius"))
-    
+
     #degrees fahrenheit
     articles.append(InformationArticle( "((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", "Fahrenheit scale", "°F", "Temperature", "Germany, 1724", "Fahrenheit proposed his temperature scale in 1724, basing it on two reference points of temperature. In his initial scale (which is not the final Fahrenheit scale), the zero point was determined by placing the thermometer in a mixture \"of ice, of water, and of ammonium chloride (salis Armoniaci) or even of sea salt\". This combination forms a eutectic system which stabilizes its temperature automatically: 0 °F was defined to be that stable temperature. The second point, 96 degrees, was approximately the human body's temperature (sanguine hominis sani, the blood of a healthy man).", "On the Fahrenheit scale, the freezing point of water is 32 degrees Fahrenheit (°F) and the boiling point is 212 °F (at standard atmospheric pressure). A degree on the Fahrenheit scale is 1⁄180 of the interval between the freezing point and the boiling point.", "No", "https://en.wikipedia.org/wiki/Fahrenheit"))
-    
+
     #degrees kelvin
     articles.append(InformationArticle( "((°|º|deg(ree)?s?) ?)?(kelvin|k)", "Kelvin scale", "K", "Temperature", "Great Britain, 1848", "In 1848, William Thomson, who later was made Lord Kelvin, wrote in his paper, On an Absolute Thermometric Scale, of the need for a scale whereby \"infinite cold\" (absolute zero) was the scale's null point, and which used the degree Celsius for its unit increment. Kelvin calculated that absolute zero was equivalent to −273 °C on the air thermometers of the time. This absolute scale is known today as the Kelvin thermodynamic temperature scale.", "Until 2018, the kelvin was defined as the fraction 1/273.16 of the thermodynamic temperature of the triple point of water (0.01 °C or 32.018 °F). In other words, it was defined such that the triple point of water is exactly 273.16 K. On 16 November 2018, a new definition was adopted, in terms of a fixed value of the Boltzmann constant. For legal metrology purposes, the new definition will officially come into force on 20 May 2019.", "Yes", "https://en.wikipedia.org/wiki/Kelvin"))
-    
-                    
+
+
 
     # TODO: Add more units...
     # example:

@@ -196,7 +196,7 @@ units.append( NormalUnit("rack ?units?|ru", DISTANCE, 0.04445) )                
 
 
 #Luminous intensity
-units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
+#units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
 
 #Power
 units.append( NormalUnit("horsepower", POWER, 745.699872) )                  #horsepower

@@ -28,7 +28,7 @@ from datetime import timedelta
 import unitconversion
 import unitpedialib
 
-description = """A Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
+description = """UnitCorrector: A Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
 bot = commands.Bot(command_prefix='!', description=description)
 
 starttime = datetime.now()
@@ -52,34 +52,43 @@ async def on_message(message): # Catches send messages and corrects non-SI units
 async def on_command(ctx):
     print('[{}] Fired {} by {}'.format(datetime.now(), ctx.command, ctx.author))
 
-@bot.command()
+@bot.command(name='unitcorrector', aliases=['units', 'listunits', 'unitlist'])
 async def unitcorrector(ctx): # May be converted to a nice embed if needed in the future.
     """Lists supported units by the unit corrector bot."""
-    await ctx.send(shortprefix + "Supported units (the bot will correct these:)\n```Area: Inch², Foot², Mile², Acre, Rood\nVolume: pint, quart, gallon, fluid ounce, teaspoon, tablespoon, barrel\nEnergy: foot-pound, btu, calories\nForce: pound-force\nTorque: pound-foot\nVelocity: Miles per hour, knots, feet per second\nTemperature: Farenheit\nPressure: pounds per square inch\nMass: ounces, pounds, stones, grains, slug\nDistance: inch, foot, mile, yard, nautical mile, thou, fanthom, furlong\nLuminous intensity: lumens\nPower: horsepower```")
+    supportedUnits = ""
+    for unit in unitconversion.units:
+        if supportedUnits != "":
+            supportedUnits += ", " + unit.getName()
+        else:
+            supportedUnits += unit.getName()
+    await ctx.send(shortprefix + "UnitCorrector automatically detects and corrects users who send non-SI units in their messages.\nThe bot currently supports the following units:\n```" + supportedUnits + "```")
 
-@bot.command()
+@bot.command(name='uptime', hidden=True)
 async def uptime(ctx): # May be deprecated, changed or removed as !about already shows the uptime.
     """Shows how long this instance of the bot has been online."""
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, (datetime.now() - starttime)))
 
-@bot.command()
+@bot.command(name='contributors')
 async def contributors(ctx): # Will be made a nice embed in the future if there are lots of contributors.
     """Lists the (nick)names of people who have contributed to this bot."""
-    await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2```')
+    await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
 
-@bot.command()
+@bot.command(name='unitpedia')
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
-    if search is not None:
-        result = unitpedialib.lookup(search)
-        if result is not "notfound":
-            await ctx.send(embed=result)
-        else:
-            await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+    result = unitpedialib.lookup(search)
+    if result != "notfound":
+        await ctx.send(embed=result)
     else:
+        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+
+@unitpedia.error
+async def unitpedia_error(ctx, error):
+    """Will notify the user if they omitted arguments to the unitpedia command"""
+    if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 
-@bot.command()
+@bot.command(name='about', aliases=['info'])
 async def about(ctx): # May be changed in the future to be send in DM to prevent malicious use for spam purposes.
     """Shows information about the bot aswell as the relevant version numbers, uptime and useful links."""
     embed = discord.Embed(title="UnitCorrector", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description="A fully functional public Discord bot that automatically corrects non-SI units (imperial, etc) to SI-ones (metric, etc) This bot will listen for any messages in Discord that contain non-SI units and when detected, reply with the message converted to SI-Units.\n\n*Are you tired of a car that weighs 100 Stones, is 10 feet high, and can drive 50 miles at 5 degrees freedom? Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!*")

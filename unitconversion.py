@@ -41,25 +41,26 @@ class UnitType:
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
-            if value > multiple/2:
+            if abs(value) > multiple/2:
                 return self.getStringFromMultiple(value, multiple)
         return self.getStringFromMultiple( value, sortedMultiples[-1] )
 
-DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9)
+DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
-VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 )
+VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 ).addMultiple( "µL", 10**-6 ).addMultiple( "nL", 10**-9 ).addMultiple( "pL", 10**-12 )
 ENERGY = UnitType().addMultiple( "J", 1 ).addMultiple( "TJ", 10**12 ).addMultiple( "GJ", 10**9 ).addMultiple( "MJ", 10**6 ).addMultiple( "kJ", 10**3 ).addMultiple( "mJ", 10**-3 ).addMultiple( "µJ", 10**-6 ).addMultiple( "nJ", 10**-9 )
-FORCE = UnitType().addMultiple( "N", 1 ).addMultiple( "kN", 10**3 ).addMultiple( "MN", 10**6 )
+FORCE = UnitType().addMultiple( "N", 1 ).addMultiple( "MN", 10**6 ).addMultiple( "kN", 10**3 ).addMultiple( "mN", 10**-3 ).addMultiple( "µN", 10**-6 ).addMultiple( "nN", 10**-9 ).addMultiple( "pN", 10**-12 )
 TORQUE = UnitType().addMultiple( "N*m", 1 )
-VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 ).addMultiple( "km/h", 0.27777777778 )
-MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( "t", 10**6 ).addMultiple( "mg", 10**-3 ).addMultiple( "µg", 10**-6 )
+VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 )
+MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( "mg", 10**-3 ).addMultiple( "µg", 10**-6 ).addMultiple( "ng", 10**-9 ).addMultiple( "pg", 10**-12 )
 TEMPERATURE = UnitType().addMultiple( "°C", 1 )
 PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
-POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "fW", 10**-15 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 ).addMultiple( "PW", 10**15 )
+POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 )
 
 class Unit:
-    def __init__( self, unitType, toSIMultiplication, toSIAddition ):
+    def __init__( self, friendlyName, unitType, toSIMultiplication, toSIAddition ):
+        self._friendlyName = friendlyName
         self._unitType = unitType
         self._toSIMultiplication = toSIMultiplication
         self._toSIAddition = toSIAddition
@@ -69,15 +70,18 @@ class Unit:
         if self._toSIAddition == 0 and SIValue == 0:
             return
         return self._unitType.getString( SIValue )
+    
+    def getName( self ):
+        return self._friendlyName
 
     @abstractmethod
     def convert( self, message ): pass
 
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):
-    def __init__( self, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
-        super( NormalUnit, self ).__init__(unitType, toSIMultiplication, toSIAddition)
-        self._regex = re.compile( "(" + regex + ")(?![a-z]|[0-9])", re.IGNORECASE )
+    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
+        super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
+        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
         originalText = message.getText()
@@ -104,6 +108,9 @@ class NormalUnit( Unit ):
                 lastPoint = repl["end"]
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
+            
+    def getName( self ):
+        return self._friendlyName
 
 # Class containing a string, for the modificable message, and a boolean
 # to indicate if the message has been modified
@@ -126,67 +133,80 @@ class ModificableMessage:
 units = []
 
 #Area
-units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516) ) #inch squared
-units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903) )     #foot squared
-units.append( NormalUnit("mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990) )       #mile squared
-units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                         #acre
-units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
+units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516 ) ) #inch squared
+units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903 ) )     #foot squared
+units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990 ) )       #mile squared
+units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                 #acre
+units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                    #rood
 
 #Volume
-units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
-units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
-units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
-units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
-units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
-units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon
-units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               #barrel
+units.append( NormalUnit( "pint", "pints?|pt", VOLUME, 0.473176 ) )                     #pint
+units.append( NormalUnit( "quart", "quarts?|qt", VOLUME, 0.946353 ) )                   #quart
+units.append( NormalUnit( "gallon", "gal(lons?)?", VOLUME, 3.78541 ) )                  #gallon
+units.append( NormalUnit( "fluid ounce", "fl\.? oz\.?", VOLUME, 0.0295735296 ) )        #fluid ounce
+units.append( NormalUnit( "teaspoon", "tsp|teaspoons?", VOLUME, 0.00492892159 ) )       #US teaspoon
+units.append( NormalUnit( "tablespoon", "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )   #US tablespoon
+units.append( NormalUnit( "barrel", "drum|barrels?", VOLUME, 119.240471 ) )             #barrel
+units.append( NormalUnit( "peck", "pecks?", VOLUME, 8.809768 ) )                        #pecks
+units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )              #bushels
 
 #Energy
-units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
-units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
-units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
-units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
+units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )    #foot-pound
+units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                    #British thermal unit
+units.append( NormalUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                         #calories
+units.append( NormalUnit( "kilocalories", "kcal(ories?)?", ENERGY, 4184 ) )                     #kilocalories
+units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", ENERGY, 3500 ) )      #ton of refrigeration
+
 
 #Force
-units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force
+units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.448222 ) )            #pound-force
 
 #Torque
-units.append( NormalUnit("Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )    #pound-foot
+units.append( NormalUnit( "pound-foot", "Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )      #pound-foot
 
 #Velocity
-units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )      #miles per hour
-units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )             #knots
-units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )     #feet per second
+units.append( NormalUnit( "miles per hour", "miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )             #miles per hour
+units.append( NormalUnit( "knot", "knots?|kts?", VELOCITY, 0.51444444444 ) )                              #knots
+units.append( NormalUnit( "feet per second", "f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )  #feet per second
 
 #Temperature
-units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
-units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
+units.append( NormalUnit( "degrees fahrenheit", "((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )  #Degrees freedom
+units.append( NormalUnit( "degrees rankine", "((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
 
 #Pressure
-units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
+units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
 
 #Mass
-units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
-units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
-units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
-units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
-units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
+units.append( NormalUnit( "ounce", "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
+units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
+units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
+units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                       #grains
+units.append( NormalUnit( "slug", "slugs?", MASS, 14593.9029 ) )                         #slug
+units.append( NormalUnit( "troy ounce", "troy ?ounces?", MASS, 31.1034768 ) )            #troy ounces
+units.append( NormalUnit( "pennyweight", "penny ?weights?", MASS, 1.55517384 ) )         #pennywheight
+units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )           #troy pound
+units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                    #drams
+units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802 ) )        #hundredweights
+
 
 #Distance
-units.append( NormalUnit("inch(es)?", DISTANCE, 0.0254 ) )                      #inch
-units.append( NormalUnit("f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                 #foot
-units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344 ) )                    #mile
-units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144 ) )                      #yard
-units.append( NormalUnit("nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       #nautical miles
-units.append( NormalUnit("thou", DISTANCE, 0.0000254 ) )                        #thou
-units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fanthom
-units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    #furlong
+units.append( NormalUnit( "inch", "inch(es)?", DISTANCE, 0.0254 ) )                           #inch
+units.append( NormalUnit( "foot", "f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                      #foot
+units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                         #mile
+units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                           #yard
+units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )   #nautical miles
+units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                             #thou
+units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                          #fathom
+units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.1680 ) )                      #furlong
+units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )                #rack units
+
+
 
 #Luminous intensity
-units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
+#units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens
 
 #Power
-units.append( NormalUnit("horsepower", POWER, 745.699872) )                  #horsepower
+units.append( NormalUnit( "horsepower", "horse ?power", POWER, 745.699872 ) )         #horsepower
 
 #Processes a string, converting freedom units to science units.
 def process(message):

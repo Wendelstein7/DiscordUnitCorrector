@@ -133,23 +133,22 @@ units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                       
 units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
 
 #Volume
-units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
+units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                     #pint
 units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
 units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
 units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
 units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
 units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon
 units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               #barrel
-units.append( NormalUnit( "pecks?|pks?", VOLUME, 8.809768 ) )                   #pecks
-units.append( NormalUnit( "bu|bushels?", VOLUME, 35.23907016688 ) )             #bushels
-units.append( NormalUnit( "cups?", VOLUME, 0.23659 ) )                          #cups
+units.append( NormalUnit( "pecks?", VOLUME, 8.809768 ) )                        #pecks
+units.append( NormalUnit( "bushels?", VOLUME, 35.23907016688 ) )                #bushels
 
 #Energy
 units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
 units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
 units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
 units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
-units.append( NormalUnit("TR|RT|To(n|nn) of refridgeration", ENERGY, 3500) )    #ton of refridgeration
+units.append( NormalUnit("ton of refrigeration", ENERGY, 3500) )                #ton of refrigeration
 
 
 #Force
@@ -159,8 +158,8 @@ units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             
 units.append( NormalUnit("Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )    #pound-foot
 
 #Velocity
-units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )      #miles per hour
-units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )             #knots
+units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )               #miles per hour
+units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )                      #knots
 units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )     #feet per second
 
 #Temperature
@@ -176,11 +175,11 @@ units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   
 units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
 units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
 units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
-units.append( NormalUnit( "troy ounces?", MASS, 31.1034768 ) )                  #troy ounces
-units.append( NormalUnit( "pennywheights?", MASS, 1.55517384 ) )                #pennywheight
-units.append( NormalUnit( "troy pounds?", MASS, 373.2417216 ) )                 #troy pound
+units.append( NormalUnit( "troy ?ounces?", MASS, 31.1034768 ) )                 #troy ounces
+units.append( NormalUnit( "penny ?weights?", MASS, 1.55517384 ) )               #pennywheight
+units.append( NormalUnit( "troy ?pounds?", MASS, 373.2417216 ) )                #troy pound
 units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
-units.append( NormalUnit( "hudred(w|wh)eight|cwt", MASS, 45359.237 ) )          #hundredweights
+units.append( NormalUnit( "hundredweight|cwt", MASS, 45359.237 ) )              #hundredweights
 units.append( NormalUnit( "tons?", MASS, 907184.74 ) )                          #short tons
 
 
@@ -191,16 +190,9 @@ units.append( NormalUnit("mi(les?)?", DISTANCE, 1609.344 ) )                    
 units.append( NormalUnit("yd|yards?", DISTANCE, 0.9144 ) )                      #yard
 units.append( NormalUnit("nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       #nautical miles
 units.append( NormalUnit("thou", DISTANCE, 0.0000254 ) )                        #thou
-units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fanthom
+units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fathom
 units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    #furlong
-units.append( NormalUnit("points?", DISTANCE, 0.000352778) )                    #points
-units.append( NormalUnit("picas?", DISTANCE, 0.004233) )                        #picas
-units.append( NormalUnit("links?|lis?", DISTANCE, 0.020117) )                   #links
-units.append( NormalUnit("rods?|rds?", DISTANCE, 5.029) )                       #rods
-units.append( NormalUnit("chains?|chs?", DISTANCE, 201.168) )                   #chains
-units.append( NormalUnit("leagues?|leas?", DISTANCE, 4828) )                    #leagues
-units.append( NormalUnit("hands?", DISTANCE, 0.1016) )                          #hands
-units.append( NormalUnit("rack units?|U", DISTANCE, 0.04445) )                  #rack units
+units.append( NormalUnit("rack ?units?|ru", DISTANCE, 0.04445) )                #rack units
 
 
 

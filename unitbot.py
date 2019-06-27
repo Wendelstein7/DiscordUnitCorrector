@@ -52,7 +52,7 @@ async def on_message(message): # Catches send messages and corrects non-SI units
 async def on_command(ctx):
     print('[{}] Fired {} by {}'.format(datetime.now(), ctx.command, ctx.author))
 
-@bot.command()
+@bot.command(name='unitcorrector', aliases=['units', 'listunits', 'unitlist'])
 async def unitcorrector(ctx): # May be converted to a nice embed if needed in the future.
     """Lists supported units by the unit corrector bot."""
     supportedUnits = ""
@@ -63,17 +63,17 @@ async def unitcorrector(ctx): # May be converted to a nice embed if needed in th
             supportedUnits += unit.getName()
     await ctx.send(shortprefix + "UnitCorrector automatically detects and corrects users who send non-SI units in their messages.\nThe bot currently supports the following units:\n```" + supportedUnits + "```")
 
-@bot.command(hidden=True)
+@bot.command(name='uptime', hidden=True)
 async def uptime(ctx): # May be deprecated, changed or removed as !about already shows the uptime.
     """Shows how long this instance of the bot has been online."""
     await ctx.send(shortprefix + 'Uptime\n```Bot started: {}\nBot uptime: {}```'.format(starttime, (datetime.now() - starttime)))
 
-@bot.command()
+@bot.command(name='contributors')
 async def contributors(ctx): # Will be made a nice embed in the future if there are lots of contributors.
     """Lists the (nick)names of people who have contributed to this bot."""
     await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
 
-@bot.command()
+@bot.command(name='unitpedia')
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
     """Gives information about an unit. Try !unitpedia mi, !unitpedia litre, !unitpedia °C, etc..."""
     result = unitpedialib.lookup(search)
@@ -84,10 +84,11 @@ async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of
 
 @unitpedia.error
 async def unitpedia_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
+    """Will notify the user if they omitted arguments to the unitpedia command"""
+    if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 
-@bot.command()
+@bot.command(name='about', aliases=['info'])
 async def about(ctx): # May be changed in the future to be send in DM to prevent malicious use for spam purposes.
     """Shows information about the bot aswell as the relevant version numbers, uptime and useful links."""
     embed = discord.Embed(title="UnitCorrector", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description="A fully functional public Discord bot that automatically corrects non-SI units (imperial, etc) to SI-ones (metric, etc) This bot will listen for any messages in Discord that contain non-SI units and when detected, reply with the message converted to SI-Units.\n\n*Are you tired of a car that weighs 100 Stones, is 10 feet high, and can drive 50 miles at 5 degrees freedom? Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!*")

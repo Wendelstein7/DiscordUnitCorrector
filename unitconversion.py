@@ -140,12 +140,17 @@ units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               
 units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
 units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon
 units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               #barrel
+units.append( NormalUnit( "pecks?|pks?", VOLUME, 8.809768 ) )                   #pecks
+units.append( NormalUnit( "bu|bushels?", VOLUME, 35.23907016688 ) )             #bushels
+units.append( NormalUnit( "cups?", VOLUME, 0.23659 ) )                          #cups
 
 #Energy
 units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
 units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
 units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
 units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
+units.append( NormalUnit("TR|RT|To(n|nn) of refridgeration", ENERGY, 3500) )    #ton of refridgeration
+
 
 #Force
 units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force
@@ -171,6 +176,13 @@ units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   
 units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
 units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
 units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
+units.append( NormalUnit( "troy ounces?", MASS, 31.1034768 ) )                  #troy ounces
+units.append( NormalUnit( "pennywheights?", MASS, 1.55517384 ) )                #pennywheight
+units.append( NormalUnit( "troy pounds?", MASS, 373.2417216 ) )                 #troy pound
+units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
+units.append( NormalUnit( "hudred(w|wh)eight|cwt", MASS, 45359.237 ) )          #hundredweights
+units.append( NormalUnit( "tons?", MASS, 907184.74 ) )                          #short tons
+
 
 #Distance
 units.append( NormalUnit("inch(es)?", DISTANCE, 0.0254 ) )                      #inch
@@ -181,6 +193,16 @@ units.append( NormalUnit("nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       
 units.append( NormalUnit("thou", DISTANCE, 0.0000254 ) )                        #thou
 units.append( NormalUnit("fathoms?", DISTANCE, 1.8288 ) )                       #fanthom
 units.append( NormalUnit("furlongs?", DISTANCE, 201.1680 ) )                    #furlong
+units.append( NormalUnit("points?", DISTANCE, 0.000352778) )                    #points
+units.append( NormalUnit("picas?", DISTANCE, 0.004233) )                        #picas
+units.append( NormalUnit("links?|lis?", DISTANCE, 0.020117) )                   #links
+units.append( NormalUnit("rods?|rds?", DISTANCE, 5.029) )                       #rods
+units.append( NormalUnit("chains?|chs?", DISTANCE, 201.168) )                   #chains
+units.append( NormalUnit("leagues?|leas?", DISTANCE, 4828) )                    #leagues
+units.append( NormalUnit("hands?", DISTANCE, 0.1016) )                          #hands
+units.append( NormalUnit("rack units?|U", DISTANCE, 0.04445) )                  #rack units
+
+
 
 #Luminous intensity
 units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens

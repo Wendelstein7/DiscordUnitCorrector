@@ -179,7 +179,7 @@ units.append( NormalUnit( "troy ?ounces?", MASS, 31.1034768 ) )                 
 units.append( NormalUnit( "penny ?weights?", MASS, 1.55517384 ) )               #pennywheight
 units.append( NormalUnit( "troy ?pounds?", MASS, 373.2417216 ) )                #troy pound
 units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
-units.append( NormalUnit( "hundredweight|cwt", MASS, 45359.237 ) )              #hundredweights
+units.append( NormalUnit( "hundredweights?|cwt", MASS, 50802 ) )              #hundredweights
 
 
 #Distance

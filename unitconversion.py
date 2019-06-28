@@ -136,8 +136,8 @@ units = []
 units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516 ) ) #inch squared
 units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903 ) )     #foot squared
 units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990 ) )       #mile squared
-units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                 #acre
-units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                    #rood
+units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                  #acre
+units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                     #rood
 
 #Volume
 units.append( NormalUnit( "pint", "pints?|pt", VOLUME, 0.473176 ) )                     #pint
@@ -156,7 +156,7 @@ units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )    
 units.append( NormalUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                         #calories
 units.append( NormalUnit( "kilocalories", "kcal(ories?)?", ENERGY, 4184 ) )                     #kilocalories
 units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", ENERGY, 3500 ) )      #ton of refrigeration
-
+units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                   #ergs
 
 #Force
 units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.448222 ) )            #pound-force
@@ -188,19 +188,17 @@ units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )  
 units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                    #drams
 units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802 ) )        #hundredweights
 
-
 #Distance
 units.append( NormalUnit( "inch", "inch(es)?", DISTANCE, 0.0254 ) )                           #inch
-units.append( NormalUnit( "foot", "f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                      #foot
+units.append( NormalUnit( "foot", "f(oo|ee)?t", DISTANCE, 0.3048 ) )                      #foot
 units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                         #mile
 units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                           #yard
 units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )   #nautical miles
 units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                             #thou
 units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                          #fathom
 units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.1680 ) )                      #furlong
-units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )                #rack units
-
-
+units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )               #rack units
+units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
 
 #Luminous intensity
 #units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens

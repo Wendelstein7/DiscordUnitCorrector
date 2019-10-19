@@ -80,7 +80,7 @@ async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of
     if result != "notfound":
         await ctx.send(embed=result)
     else:
-        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using diffrent words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
+        await ctx.send(shortprefix + 'Sorry, your search query has not returned any results. Try to search using different words or abbreviations.\n\n*Unitpedia is not complete and needs community submissions. If you want to help expand unitpedia, please visit <https://github.com/Wendelstein7/DiscordUnitCorrector>.*')
 
 @unitpedia.error
 async def unitpedia_error(ctx, error):

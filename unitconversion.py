@@ -9,7 +9,7 @@ from enum import Enum
 import re
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
+END_NUMBER_REGEX = re.compile("(?<=^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?

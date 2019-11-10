@@ -92,7 +92,7 @@ async def unitpedia_error(ctx, error):
 async def about(ctx): # May be changed in the future to be send in DM to prevent malicious use for spam purposes.
     """Shows information about the bot aswell as the relevant version numbers, uptime and useful links."""
     embed = discord.Embed(title="UnitCorrector", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description="A fully functional public Discord bot that automatically corrects non-SI units (imperial, etc) to SI-ones (metric, etc) This bot will listen for any messages in Discord that contain non-SI units and when detected, reply with the message converted to SI-Units.\n\n*Are you tired of a car that weighs 100 Stones, is 10 feet high, and can drive 50 miles at 5 degrees freedom? Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!*")
-    embed.set_thumbnail(url="https://cdn.discordapp.com/avatars/405724335525855232/c8c782f4c2de5d221d4beb203829ed9c.webp?size=256")
+    embed.set_thumbnail(url=bot.user.avatar_url + "?size=256")
     embed.add_field(name=":information_source: **Commands**", value="Please use the `!help` to list all possible commands!")
     embed.add_field(name=":hash: **Developers**", value="**Googly** - Creator and main developer\n**ficolas** - Developer")
     embed.add_field(name=":symbols: **Contributing**", value="Want to help with the bot? You're welcome to do so!\n[Visit our GitHub for more information!](https://github.com/Wendelstein7/DiscordUnitCorrector)")

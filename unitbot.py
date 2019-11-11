@@ -31,7 +31,7 @@ import unitpedialib
 description = """UnitCorrector: A Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
 bot = commands.Bot(command_prefix='!', description=description)
 
-starttime = datetime.now()
+starttime = datetime.utcnow()
 longprefix = ':symbols: UnitCorrector | '
 shortprefix = ':symbols: '
 
@@ -94,10 +94,10 @@ async def about(ctx): # May be changed in the future to be send in DM to prevent
     embed = discord.Embed(title="UnitCorrector", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description="A fully functional public Discord bot that automatically corrects non-SI units (imperial, etc) to SI-ones (metric, etc) This bot will listen for any messages in Discord that contain non-SI units and when detected, reply with the message converted to SI-Units.\n\n*Are you tired of a car that weighs 100 Stones, is 10 feet high, and can drive 50 miles at 5 degrees freedom? Worry no more! Your car weighs 0.64t, is 3.05m high, and can drive 80.47km at -15°C from now on!*")
     embed.set_thumbnail(url=bot.user.avatar_url)
     embed.add_field(name=":information_source: **Commands**", value="Please use the `!help` to list all possible commands!")
-    embed.add_field(name=":hash: **Developers**", value="**Googly** - Creator and main developer\n**ficolas** - Developer")
+    embed.add_field(name=":hash: **Developers**", value="**HydroNitrogen** - Creator and main developer\n**ficolas** - Developer")
     embed.add_field(name=":symbols: **Contributing**", value="Want to help with the bot? You're welcome to do so!\n[Visit our GitHub for more information!](https://github.com/Wendelstein7/DiscordUnitCorrector)")
     embed.add_field(name=":new: **Version information**", value="Bot version: `{}`\nDiscord.py version: `{}`\nPython version: `{}`".format(date.fromtimestamp(os.path.getmtime('unitbot.py')), discord.__version__, sys.version.split(' ')[0]), inline=True)
-    embed.add_field(name=":up: **Uptime information**", value="Bot started: `{}`\nBot uptime: `{}`".format(starttime.strftime("%Y-%m-%d %H:%M:%S"), (datetime.now().replace(microsecond=0) - starttime.replace(microsecond=0))), inline=True)
+    embed.add_field(name=":up: **Uptime information**", value="Bot started: `{}`\nBot uptime: `{}`".format(starttime.strftime("%Y-%m-%d %H:%M:%S"), (datetime.utcnow().replace(microsecond=0) - starttime.replace(microsecond=0))), inline=True)
     embed.add_field(name=":free: **Adding the bot**", value="Want to add this bot to **your** server? [Click here to add it!](https://discordapp.com/oauth2/authorize?client_id=405724335525855232&scope=bot&permissions=67619905)")
     await ctx.send(embed=embed)
 

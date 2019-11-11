@@ -71,7 +71,7 @@ async def uptime(ctx): # May be deprecated, changed or removed as !about already
 @bot.command(name='contributors')
 async def contributors(ctx): # Will be made a nice embed in the future if there are lots of contributors.
     """Lists the (nick)names of people who have contributed to this bot."""
-    await ctx.send(shortprefix + 'Contributors: ``` - Google (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
+    await ctx.send(shortprefix + 'Contributors: ``` - HydroNitrogen (a.k.a. Googly, GoogleTech and Wendelstein7) - https://github.com/Wendelstein7\n - ficolas2 (a.k.a. Horned horn) - https://github.com/ficolas2\n - Other various contributors (see GitHub) - https://github.com/Wendelstein7/DiscordUnitCorrector```')
 
 @bot.command(name='unitpedia')
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.
@@ -84,7 +84,6 @@ async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of
 
 @unitpedia.error
 async def unitpedia_error(ctx, error):
-    """Will notify the user if they omitted arguments to the unitpedia command"""
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(shortprefix + 'You will need to enter a query to search for. Try `!unitpedia metre`, `!unitpedia °F`, `!unitpedia mile²`, etc...')
 

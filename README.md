@@ -47,11 +47,11 @@ For more help: please [join the official UnitCorrector support and chat server](
 
 ### How to run yourself (NOT RECCOMMENDED unless you want to develop)
 * Install the main dependency Discord.py using `python3 -m pip install -U discord.py` (make sure you got the rewrite branch!)
-* Do `git clone https://github.com/Wendelstein7/KeyStoneBot`.
-* Go to the created folder `KeyStoneBot`.
+* `git clone https://github.com/Wendelstein7/DiscordUnitCorrector`.
+* Navigate to the created folder `DiscordUnitCorrector`.
 * Create a (text) file named `token`.
 * Open it with a text editor and enter your Discord bot token there, and save it.
-* Run the bot with `python3 keystonebot.py`.
+* Run the bot with `python3 DiscordUnitCorrector.py`.
 * boom!
 
 ### API reference and documentation:

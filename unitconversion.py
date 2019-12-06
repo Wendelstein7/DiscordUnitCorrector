@@ -143,6 +143,9 @@ units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               
 units.append( NormalUnit( "pecks?|pks?", VOLUME, 8.809768 ) )                   #pecks
 units.append( NormalUnit( "bu|bushels?", VOLUME, 35.23907016688 ) )             #bushels
 units.append( NormalUnit( "cups?", VOLUME, 0.23659 ) )                          #cups
+units.append( NormalUnit("aams?", VOLUME, 153 ) )                               #aams(old Latvian volume measurement(āms(a)))
+
+
 
 #Energy
 units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
@@ -182,6 +185,8 @@ units.append( NormalUnit( "troy pounds?", MASS, 373.2417216 ) )                 
 units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
 units.append( NormalUnit( "hudred(w|wh)eight|cwt", MASS, 45359.237 ) )          #hundredweights
 units.append( NormalUnit( "tons?", MASS, 907184.74 ) )                          #short tons
+units.append( NormalUnit( "bir(c|k)avs?", MASS, 167.52 )                        #bircav(old Latvian mass measurement(birkavs)
+units.append( NormalUnit( "sieks?", MASS, 8 )                                   #sieks(old Latvian mass measurement(sieks))
 
 
 #Distance
@@ -201,6 +206,9 @@ units.append( NormalUnit("chains?|chs?", DISTANCE, 201.168) )                   
 units.append( NormalUnit("leagues?|leas?", DISTANCE, 4828) )                    #leagues
 units.append( NormalUnit("hands?", DISTANCE, 0.1016) )                          #hands
 units.append( NormalUnit("rack units?|U", DISTANCE, 0.04445) )                  #rack units
+units.append( NormalUnit("ole(c|k)ts?", DISTANCE, 0.5375 ) )                    #olects(old Latvian distance measurement(Olekts))
+units.append( NormalUnit("(c|k)ortels?", DISTANCE, 0.1344 ) )                   #Cortel(old Latvian distance measurement(Kortelis))
+units.append( NormalUnit("archins?", DISTANCE, 0.7112 ) )                       #archin(old Latvian distance measurement(aršins))
 
 
 

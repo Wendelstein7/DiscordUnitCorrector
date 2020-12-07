@@ -9,7 +9,7 @@ from enum import Enum
 import re
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
+END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
@@ -41,25 +41,26 @@ class UnitType:
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
-            if value > multiple/2:
+            if abs(value) > multiple/2:
                 return self.getStringFromMultiple(value, multiple)
         return self.getStringFromMultiple( value, sortedMultiples[-1] )
 
-DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9)
+DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
-VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 )
+VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 ).addMultiple( "µL", 10**-6 ).addMultiple( "nL", 10**-9 ).addMultiple( "pL", 10**-12 )
 ENERGY = UnitType().addMultiple( "J", 1 ).addMultiple( "TJ", 10**12 ).addMultiple( "GJ", 10**9 ).addMultiple( "MJ", 10**6 ).addMultiple( "kJ", 10**3 ).addMultiple( "mJ", 10**-3 ).addMultiple( "µJ", 10**-6 ).addMultiple( "nJ", 10**-9 )
-FORCE = UnitType().addMultiple( "N", 1 ).addMultiple( "kN", 10**3 ).addMultiple( "MN", 10**6 )
+FORCE = UnitType().addMultiple( "N", 1 ).addMultiple( "MN", 10**6 ).addMultiple( "kN", 10**3 ).addMultiple( "mN", 10**-3 ).addMultiple( "µN", 10**-6 ).addMultiple( "nN", 10**-9 ).addMultiple( "pN", 10**-12 )
 TORQUE = UnitType().addMultiple( "N*m", 1 )
-VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 ).addMultiple( "km/h", 0.27777777778 )
-MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( "t", 10**6 ).addMultiple( "mg", 10**-3 ).addMultiple( "µg", 10**-6 )
+VELOCITY = UnitType().addMultiple("m/s", 1).addMultiple( "km/s", 10**3 )
+MASS = UnitType().addMultiple( "g", 1 ).addMultiple( "kg", 10**3 ).addMultiple( "mg", 10**-3 ).addMultiple( "µg", 10**-6 ).addMultiple( "ng", 10**-9 ).addMultiple( "pg", 10**-12 )
 TEMPERATURE = UnitType().addMultiple( "°C", 1 )
 PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
-POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "fW", 10**-15 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 ).addMultiple( "PW", 10**15 )
+POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 )
 
 class Unit:
-    def __init__( self, unitType, toSIMultiplication, toSIAddition ):
+    def __init__( self, friendlyName, unitType, toSIMultiplication, toSIAddition ):
+        self._friendlyName = friendlyName
         self._unitType = unitType
         self._toSIMultiplication = toSIMultiplication
         self._toSIAddition = toSIAddition
@@ -69,15 +70,18 @@ class Unit:
         if self._toSIAddition == 0 and SIValue == 0:
             return
         return self._unitType.getString( SIValue )
+    
+    def getName( self ):
+        return self._friendlyName
 
     @abstractmethod
     def convert( self, message ): pass
 
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):
-    def __init__( self, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
-        super( NormalUnit, self ).__init__(unitType, toSIMultiplication, toSIAddition)
-        self._regex = re.compile( "(" + regex + ")(?![a-z]|[0-9])", re.IGNORECASE )
+    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
+        super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
+        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
         originalText = message.getText()
@@ -104,6 +108,9 @@ class NormalUnit( Unit ):
                 lastPoint = repl["end"]
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
+            
+    def getName( self ):
+        return self._friendlyName
 
 # Class containing a string, for the modificable message, and a boolean
 # to indicate if the message has been modified
@@ -126,13 +133,14 @@ class ModificableMessage:
 units = []
 
 #Area
-units.append( NormalUnit("in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516) ) #inch squared
-units.append( NormalUnit("f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903) )     #foot squared
-units.append( NormalUnit("mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990) )       #mile squared
-units.append( NormalUnit("acres?", AREA, 4046.8564224 ) )                         #acre
-units.append( NormalUnit("roods?", AREA, 1011.7141 ) )                            #rood
+units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516 ) ) #inch squared
+units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903 ) )     #foot squared
+units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990 ) )       #mile squared
+units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                  #acre
+units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                     #rood
 
 #Volume
+
 units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
 units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
 units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
@@ -147,33 +155,35 @@ units.append( NormalUnit("aams?", VOLUME, 153 ) )                               
 
 
 
-#Energy
-units.append( NormalUnit("ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818) )    #foot-pound
-units.append( NormalUnit("btu", ENERGY, 1055.06) )                              #btu
-units.append( NormalUnit("cal(ories?)?", ENERGY, 4.184) )                       #calories
-units.append( NormalUnit("kcal(ories?)?", ENERGY, 4184) )                       #kilocalories
-units.append( NormalUnit("TR|RT|To(n|nn) of refridgeration", ENERGY, 3500) )    #ton of refridgeration
 
+#Energy
+units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )    #foot-pound
+units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                    #British thermal unit
+units.append( NormalUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                         #calories
+units.append( NormalUnit( "kilocalories", "kcal(ories?)?", ENERGY, 4184 ) )                     #kilocalories
+units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", ENERGY, 3500 ) )      #ton of refrigeration
+units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                   #ergs
 
 #Force
-units.append( NormalUnit("pound( |-)?force|lbf", FORCE, 4.448222) )             #pound-force
+units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.448222 ) )            #pound-force
 
 #Torque
-units.append( NormalUnit("Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )    #pound-foot
+units.append( NormalUnit( "pound-foot", "Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )      #pound-foot
 
 #Velocity
-units.append( NormalUnit("miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )      #miles per hour
-units.append( NormalUnit("knots?|kts?", VELOCITY, 0.51444444444 ) )             #knots
-units.append( NormalUnit("f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )     #feet per second
+units.append( NormalUnit( "miles per hour", "miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )             #miles per hour
+units.append( NormalUnit( "knot", "knots?|kts?", VELOCITY, 0.51444444444 ) )                              #knots
+units.append( NormalUnit( "feet per second", "f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )  #feet per second
 
 #Temperature
-units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )     #Degrees freedom
-units.append( NormalUnit("((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
+units.append( NormalUnit( "degrees fahrenheit", "((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )  #Degrees freedom
+units.append( NormalUnit( "degrees rankine", "((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
 
 #Pressure
-units.append( NormalUnit( "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
+units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
 
 #Mass
+
 units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
 units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
 units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
@@ -209,14 +219,17 @@ units.append( NormalUnit("rack units?|U", DISTANCE, 0.04445) )                  
 units.append( NormalUnit("ole(c|k)ts?", DISTANCE, 0.5375 ) )                    #olects(old Latvian distance measurement(Olekts))
 units.append( NormalUnit("(c|k)ortels?", DISTANCE, 0.1344 ) )                   #Cortel(old Latvian distance measurement(Kortelis))
 units.append( NormalUnit("archins?", DISTANCE, 0.7112 ) )                       #archin(old Latvian distance measurement(aršins))
+units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
+
+
 
 
 
 #Luminous intensity
-units.append( NormalUnit("lumens?|lm", LUMINOUSINTENSITY, 1 ) )                 #lumens
+#units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens
 
 #Power
-units.append( NormalUnit("horsepower", POWER, 745.699872) )                  #horsepower
+units.append( NormalUnit( "horsepower", "horse ?power", POWER, 745.699872 ) )         #horsepower
 
 #Processes a string, converting freedom units to science units.
 def process(message):

@@ -4,9 +4,8 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-from abc import ABCMeta, abstractmethod
-from enum import Enum
 import re
+from abc import abstractmethod
 from math import log10, floor
 
 END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
@@ -70,7 +69,7 @@ class Unit:
         if self._toSIAddition == 0 and SIValue == 0:
             return
         return self._unitType.getString( SIValue )
-    
+
     def getName( self ):
         return self._friendlyName
 
@@ -108,7 +107,7 @@ class NormalUnit( Unit ):
                 lastPoint = repl["end"]
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
-            
+
     def getName( self ):
         return self._friendlyName
 

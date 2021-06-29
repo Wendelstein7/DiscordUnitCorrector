@@ -141,17 +141,15 @@ units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )              
 units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                     #rood
 
 #Volume
-units.append( NormalUnit( "pints?|pt", VOLUME, 0.473176 ) )                   #pint
-units.append( NormalUnit( "quarts?|qt", VOLUME, 0.946353 ) )                    #quart
-units.append( NormalUnit( "gal(lons?)?", VOLUME, 3.78541 ) )                    #gallon
-units.append( NormalUnit( "fl\.? oz\.?", VOLUME, 0.0295735296 ) )               #fluid ounce
-units.append( NormalUnit( "tsp|teaspoons?", VOLUME, 0.00492892159 ) )           #US teaspoon
-units.append( NormalUnit( "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )         #US tablespoon
-units.append( NormalUnit( "drum|barrels?", VOLUME, 119.240471 ) )               #barrel
-units.append( NormalUnit( "pecks?|pks?", VOLUME, 8.809768 ) )                   #pecks
-units.append( NormalUnit( "bu|bushels?", VOLUME, 35.23907016688 ) )             #bushels
-units.append( NormalUnit( "cups?", VOLUME, 0.23659 ) )                          #cups
-units.append( NormalUnit("aams?", VOLUME, 153 ) )                               #aams(old Latvian volume measurement(āms(a)))
+units.append( NormalUnit( "pint", "pints?|pt", VOLUME, 0.473176 ) )                     #pint
+units.append( NormalUnit( "quart", "quarts?|qt", VOLUME, 0.946353 ) )                   #quart
+units.append( NormalUnit( "gallon", "gal(lons?)?", VOLUME, 3.78541 ) )                  #gallon
+units.append( NormalUnit( "fluid ounce", "fl\.? oz\.?", VOLUME, 0.0295735296 ) )        #fluid ounce
+units.append( NormalUnit( "teaspoon", "tsp|teaspoons?", VOLUME, 0.00492892159 ) )       #US teaspoon
+units.append( NormalUnit( "tablespoon", "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )   #US tablespoon
+units.append( NormalUnit( "barrel", "drum|barrels?", VOLUME, 119.240471 ) )             #barrel
+units.append( NormalUnit( "peck", "pecks?", VOLUME, 8.809768 ) )                        #pecks
+units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )              #bushels
 
 #Energy
 units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )    #foot-pound
@@ -180,41 +178,28 @@ units.append( NormalUnit( "degrees rankine", "((°|º|deg(ree)?s?) ?)?(ra?(nkine
 units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
 
 #Mass
-units.append( NormalUnit( "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
-units.append( NormalUnit( "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
-units.append( NormalUnit( "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
-units.append( NormalUnit( "grains?", MASS, 0.06479891 ) )                       #grains
-units.append( NormalUnit( "slugs?", MASS, 14593.9029 ) )                        #slug
-units.append( NormalUnit( "troy ounces?", MASS, 31.1034768 ) )                  #troy ounces
-units.append( NormalUnit( "pennywheights?", MASS, 1.55517384 ) )                #pennywheight
-units.append( NormalUnit( "troy pounds?", MASS, 373.2417216 ) )                 #troy pound
-units.append( NormalUnit( "drams?", MASS, 1.7718451953125 ) )                   #drams
-units.append( NormalUnit( "hudred(w|wh)eight|cwt", MASS, 45359.237 ) )          #hundredweights
-units.append( NormalUnit( "tons?", MASS, 907184.74 ) )                          #short tons
-units.append( NormalUnit( "bir(c|k)avs?", MASS, 167.52 ) )                      #bircav(old Latvian mass measurement(birkavs)
-units.append( NormalUnit( "sieks?", MASS, 8 ) )                                 #sieks(old Latvian mass measurement(sieks))
+units.append( NormalUnit( "ounce", "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
+units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
+units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
+units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                       #grains
+units.append( NormalUnit( "slug", "slugs?", MASS, 14593.9029 ) )                         #slug
+units.append( NormalUnit( "troy ounce", "troy ?ounces?", MASS, 31.1034768 ) )            #troy ounces
+units.append( NormalUnit( "pennyweight", "penny ?weights?", MASS, 1.55517384 ) )         #pennywheight
+units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )           #troy pound
+units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                    #drams
+units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802 ) )        #hundredweights
 
 #Distance
-units.append( NormalUnit( "inch(es)?", DISTANCE, 0.0254 ) )                      #inch
-units.append( NormalUnit( "f(oo|ee)?t|'|′", DISTANCE, 0.3048 ) )                 #foot
-units.append( NormalUnit( "mi(les?)?", DISTANCE, 1609.344 ) )                    #mile
-units.append( NormalUnit( "yd|yards?", DISTANCE, 0.9144 ) )                      #yard
-units.append( NormalUnit( "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )       #nautical miles
-units.append( NormalUnit( "thou", DISTANCE, 0.0000254 ) )                        #thou
-units.append( NormalUnit( "fathoms?", DISTANCE, 1.8288 ) )                       #fathom
-units.append( NormalUnit( "furlongs?", DISTANCE, 201.1680 ) )                    #furlong
-units.append( NormalUnit( "points?", DISTANCE, 0.000352778) )                    #points
-units.append( NormalUnit( "picas?", DISTANCE, 0.004233) )                        #picas
-units.append( NormalUnit( "links?|lis?", DISTANCE, 0.020117) )                   #links
-units.append( NormalUnit( "rods?|rds?", DISTANCE, 5.029) )                       #rods
-units.append( NormalUnit( "chains?|chs?", DISTANCE, 201.168) )                   #chains
-units.append( NormalUnit( "leagues?|leas?", DISTANCE, 4828) )                    #leagues
-units.append( NormalUnit( "hands?", DISTANCE, 0.1016) )                          #hands
-units.append( NormalUnit( "rack units?|U", DISTANCE, 0.04445) )                  #rack units
-units.append( NormalUnit( "ole(c|k)ts?", DISTANCE, 0.5375 ) )                    #olects(old Latvian distance measurement(Olekts))
-units.append( NormalUnit( "(c|k)ortels?", DISTANCE, 0.1344 ) )                   #Cortel(old Latvian distance measurement(Kortelis))
-units.append( NormalUnit( "archins?", DISTANCE, 0.7112 ) )                       #archin(old Latvian distance measurement(aršins))
-units.append( NormalUnit( "smoots?", DISTANCE, 1.7018 ) )                        #Smoot units
+units.append( NormalUnit( "inch", "inch(es)?", DISTANCE, 0.0254 ) )                           #inch
+units.append( NormalUnit( "foot", "f(oo|ee)?t", DISTANCE, 0.3048 ) )                      #foot
+units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                         #mile
+units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                           #yard
+units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )   #nautical miles
+units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                             #thou
+units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                          #fathom
+units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.1680 ) )                      #furlong
+units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )               #rack units
+units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
 
 #Luminous intensity
 #units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens

@@ -4,12 +4,12 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-from abc import ABCMeta, abstractmethod
-from enum import Enum
 import re
+from abc import abstractmethod
 from math import log10, floor
 
 END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
+SPACE_PREFIXED_REGEX = re.compile("^ \d*[ ]?$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
@@ -70,7 +70,7 @@ class Unit:
         if self._toSIAddition == 0 and SIValue == 0:
             return
         return self._unitType.getString( SIValue )
-    
+
     def getName( self ):
         return self._friendlyName
 
@@ -92,12 +92,13 @@ class NormalUnit( Unit ):
         for find in iterator:
             numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
             if numberResult is not None:
+                isSpacePrefixed = SPACE_PREFIXED_REGEX.search( numberResult.group() )
                 metricValue = self.toMetric( float( numberResult.group().replace(",", ".") ) )
                 if metricValue is None:
                     continue
                 repl = {}
                 repl[ "start" ] = numberResult.start()
-                repl[ "text"  ] = metricValue
+                repl[ "text"  ] = (" " if isSpacePrefixed else "") + metricValue
                 repl[ "end" ] = find.end()
                 replacements.append(repl)
         if len(replacements)>0:
@@ -108,7 +109,7 @@ class NormalUnit( Unit ):
                 lastPoint = repl["end"]
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
-            
+
     def getName( self ):
         return self._friendlyName
 

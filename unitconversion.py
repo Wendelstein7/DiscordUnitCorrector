@@ -9,7 +9,6 @@ from abc import abstractmethod
 from math import log10, floor
 
 END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
-SPACE_PREFIXED_REGEX = re.compile("^ \d*[ ]?$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
@@ -92,13 +91,17 @@ class NormalUnit( Unit ):
         for find in iterator:
             numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
             if numberResult is not None:
-                isSpacePrefixed = SPACE_PREFIXED_REGEX.search( numberResult.group() )
+                initialSpaceCount = 0
+                prefix = ""
+                while (numberResult.group()[initialSpaceCount].isspace()):
+                    prefix += numberResult.group()[initialSpaceCount]
+                    initialSpaceCount += 1
                 metricValue = self.toMetric( float( numberResult.group().replace(",", ".") ) )
                 if metricValue is None:
                     continue
                 repl = {}
                 repl[ "start" ] = numberResult.start()
-                repl[ "text"  ] = (" " if isSpacePrefixed else "") + metricValue
+                repl[ "text"  ] = (prefix) + metricValue
                 repl[ "end" ] = find.end()
                 replacements.append(repl)
         if len(replacements)>0:

@@ -77,6 +77,34 @@ class Unit:
     @abstractmethod
     def convert( self, message ): pass
 
+def convertModificableMessage( message, regex, toMetric ):
+    originalText = message.getText()
+    if UNICODEMINUS:
+        originalText = originalText.replace('−', '-')
+    iterator = regex.finditer( originalText )
+    replacements = []
+    for find in iterator:
+        numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
+        if numberResult is not None:
+            isSpacePrefixed = SPACE_PREFIXED_REGEX.search( numberResult.group() )
+            metricValue = toMetric( float( numberResult.group().replace(",", ".") ) )
+            if metricValue is None:
+                continue
+            repl = {}
+            repl[ "start" ] = numberResult.start()
+            repl[ "text"  ] = (" " if isSpacePrefixed else "") + metricValue
+            repl[ "end" ] = find.end()
+            replacements.append(repl)
+    if len(replacements)>0:
+        lastPoint = 0
+        finalMessage = ""
+        for repl in replacements:
+            finalMessage += originalText[ lastPoint: repl[ "start" ] ] + repl[ "text" ]
+            lastPoint = repl["end"]
+        finalMessage += originalText[ lastPoint : ]
+        message.setText(finalMessage)
+
+
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
@@ -84,34 +112,15 @@ class NormalUnit( Unit ):
         self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
-        originalText = message.getText()
-        if UNICODEMINUS:
-            originalText = originalText.replace('−', '-')
-        iterator = self._regex.finditer( originalText )
-        replacements = []
-        for find in iterator:
-            numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
-            if numberResult is not None:
-                isSpacePrefixed = SPACE_PREFIXED_REGEX.search( numberResult.group() )
-                metricValue = self.toMetric( float( numberResult.group().replace(",", ".") ) )
-                if metricValue is None:
-                    continue
-                repl = {}
-                repl[ "start" ] = numberResult.start()
-                repl[ "text"  ] = (" " if isSpacePrefixed else "") + metricValue
-                repl[ "end" ] = find.end()
-                replacements.append(repl)
-        if len(replacements)>0:
-            lastPoint = 0
-            finalMessage = ""
-            for repl in replacements:
-                finalMessage += originalText[ lastPoint: repl[ "start" ] ] + repl[ "text" ]
-                lastPoint = repl["end"]
-            finalMessage += originalText[ lastPoint : ]
-            message.setText(finalMessage)
+        convertModificableMessage( message, self._regex, self.toMetric )
 
-    def getName( self ):
-        return self._friendlyName
+class CaseSensitiveUnit( Unit ):
+    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
+        super( CaseSensitiveUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
+        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))" )
+    
+    def convert( self, message ):
+        return convertModificableMessage( message, self._regex, self.toMetric)
 
 # Class containing a string, for the modificable message, and a boolean
 # to indicate if the message has been modified
@@ -134,9 +143,9 @@ class ModificableMessage:
 units = []
 
 #Area
-units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", DISTANCE, 0.00064516 ) ) #inch squared
-units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", DISTANCE, 0.092903 ) )     #foot squared
-units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", DISTANCE, 2589990 ) )       #mile squared
+units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", AREA, 0.00064516 ) )     #inch squared
+units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", AREA, 0.092903 ) )         #foot squared
+units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", AREA, 2589990 ) )           #mile squared
 units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                  #acre
 units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                     #rood
 
@@ -152,12 +161,12 @@ units.append( NormalUnit( "peck", "pecks?", VOLUME, 8.809768 ) )                
 units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )              #bushels
 
 #Energy
-units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )    #foot-pound
-units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                    #British thermal unit
-units.append( NormalUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                         #calories
-units.append( NormalUnit( "kilocalories", "kcal(ories?)?", ENERGY, 4184 ) )                     #kilocalories
-units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", ENERGY, 3500 ) )      #ton of refrigeration
-units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                   #ergs
+units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )                 #foot-pound
+units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                                 #British thermal unit
+units.append( CaseSensitiveUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                               #calories
+units.append( CaseSensitiveUnit( "kilocalories", "(kc|k?C)al(ories?)?", ENERGY, 4184 ) )       #kilocalories
+units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER, 3500 ) )                    #ton of refrigeration
+units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                                #ergs
 
 #Force
 units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.448222 ) )            #pound-force

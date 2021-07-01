@@ -17,10 +17,33 @@ USESIGNIFICANT = True    # Option: Should rounding be done using significancy? I
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
 DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
 
+def numSigFigs(string):
+    lzs = 0
+    if ("e" in string):
+        string = string[0:string.index("e")]
+    while((string[lzs] == ".") | (string[lzs] == "0")):
+        lzs += 1
+    if ("." in string):
+        if (string.index(".") >= lzs - 1):
+            return len(string) - lzs - 1
+        if (string.index(".") >= 0):
+            return len(string) - lzs
+        return None
+    tzs = len(string) - 1
+    while(string[tzs] == "0"):
+        tzs -= 1
+    return tzs - lzs + 1
+
 def roundsignificant(number):
     if number == 0:
         return 0
-    return round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1)
+    out = str(round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1))
+    addex = len(out)
+    if ("e" in out):
+        addex = out.index("e")
+    while (numSigFigs(out) < SIGNIFICANTFIGURES):
+        out = out[0:addex] + "0" + out[addex:len(out)]
+    return out
 
 class UnitType:
 
@@ -78,6 +101,7 @@ class Unit:
 
 def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     global SPACED
+    global SIGNIFICANTFIGURES
     originalText = message.getText()
     if UNICODEMINUS:
         originalText = originalText.replace('−', '-')
@@ -86,6 +110,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
         if numberResult is not None:
+            SIGNIFICANTFIGURES = numSigFigs(numberResult.group().strip())
             initialSpaceCount = 0
             prefix = ""
             while (numberResult.group()[initialSpaceCount].isspace()):

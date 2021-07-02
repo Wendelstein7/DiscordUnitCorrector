@@ -20,10 +20,12 @@ DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ign
 
 def numSigFigs(string):
     lzs = 0
-    if ("e" in string):
-        string = string[0:string.index("e")]
+    preexponential = re.compile("[\s\S]*(?=(e))").search(string)
+    string = preexponential.group() if preexponential else string
     while((string[lzs] == ".") | (string[lzs] == "0")):
         lzs += 1
+        if (lzs == len(string)):
+            return 0
     if ("." in string):
         if (string.index(".") >= lzs - 1):
             return len(string) - lzs - 1
@@ -38,12 +40,20 @@ def numSigFigs(string):
 def roundsignificant(number):
     if number == 0:
         return 0
-    out = str(round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1))
-    adddex = len(out)
+    digits = -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1
+    out = str(round(int(number), digits)) if digits<=0 else str(round(number, digits))
+    addex = len(out)
     if ("e" in out):
         addex = out.index("e")
-    while (numSigFigs(out) < SIGNIFICANTFIGURES):
-        out = out[0:addex] + "0" + out[addex:len(out)]
+        if (not "." in out):
+            out = out[0:addex] + "." + out[addex:len(out)]
+            addex += 1
+    if ("." in out):
+        while (numSigFigs(out) < SIGNIFICANTFIGURES):
+            out = out[0:addex] + "0" + out[addex:len(out)]
+    else:
+        if (numSigFigs(out) == SIGNIFICANTFIGURES):
+            return out
     return out
 
 class UnitType:
@@ -117,7 +127,6 @@ class NormalUnit( Unit ):
             numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
             if numberResult is not None:
                 SIGNIFICANTFIGURES = numSigFigs(numberResult.group().strip())
-                print(SIGNIFICANTFIGURES)
                 isSpacePrefixed = SPACE_PREFIXED_REGEX.search( numberResult.group() )
                 metricValue = self.toMetric( float( numberResult.group().replace(",", ".") ) )
                 if metricValue is None:

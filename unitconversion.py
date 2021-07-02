@@ -26,7 +26,7 @@ def numSigFigs(string):
         if (lzs == len(string)):
             return 0
     if ("." in string):
-        if (string.index(".") >= lzs - 1):
+        if (string.index(".") >= lzs):
             return len(string) - lzs - 1
         if (string.index(".") >= 0):
             return len(string) - lzs
@@ -36,23 +36,42 @@ def numSigFigs(string):
         tzs -= 1
     return tzs - lzs + 1
 
+# precondition: string is a full-form int, not terminated with a radix
+def scientificnotation(string, sigfigs):
+    out = string[0]+"."
+    i=1
+    while(i<sigfigs):
+        out += string[i]
+        i += 1
+    return out + "e+" + str(len(string)-1)
+
 def roundsignificant(number):
-    if number == 0:
-        return 0
+    if number == 0 or SIGNIFICANTFIGURES == 0:
+        return "0"
+    scinot = False
     digits = -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1
-    out = str(round(int(number), digits)) if digits<=0 else str(round(number, digits))
-    addex = len(out)
-    if ("e" in out):
-        addex = out.index("e")
-        if (not "." in out):
+    print(digits)
+    if (digits <= 0):
+        if ("e" in str(float(number))):
+            scinot = True
+        number = round(number)
+    out = str(round(number, digits))
+    if (digits > 0):
+        addex = len(out)
+        if ("e" in out):
+            addex = out.index("e")
+        if (not "." in out and SIGNIFICANTFIGURES > 1):
             out = out[0:addex] + "." + out[addex:len(out)]
             addex += 1
-    if ("." in out):
+        print(str(numSigFigs(out)) + " " + out)
         while (numSigFigs(out) < SIGNIFICANTFIGURES):
             out = out[0:addex] + "0" + out[addex:len(out)]
-    else:
-        if (numSigFigs(out) == SIGNIFICANTFIGURES):
-            return out
+        return out
+    bad = numSigFigs(out) != SIGNIFICANTFIGURES
+    if (scinot or (bad and digits != 0)):
+        return scientificnotation(out, SIGNIFICANTFIGURES)
+    if (bad and digits == 0):
+        return out + "."
     return out
 
 class UnitType:

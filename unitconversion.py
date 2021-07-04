@@ -77,11 +77,11 @@ class Unit:
     @abstractmethod
     def convert( self, message ): pass
 
-def convertModificableMessage( message, regex, toMetric ):
+def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     originalText = message.getText()
     if UNICODEMINUS:
         originalText = originalText.replace('−', '-')
-    iterator = regex.finditer( originalText )
+    iterator = unit_regex.finditer( originalText )
     replacements = []
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
@@ -112,7 +112,7 @@ class NormalUnit( Unit ):
         self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
 
     def convert( self, message ):
-        convertModificableMessage( message, self._regex, self.toMetric )
+        convertUnitInModificableMessage( message, self._regex, self.toMetric )
 
 class CaseSensitiveUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
@@ -120,7 +120,7 @@ class CaseSensitiveUnit( Unit ):
         self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))" )
     
     def convert( self, message ):
-        return convertModificableMessage( message, self._regex, self.toMetric)
+        return convertUnitInModificableMessage( message, self._regex, self.toMetric)
 
 # Class containing a string, for the modificable message, and a boolean
 # to indicate if the message has been modified

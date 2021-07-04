@@ -50,7 +50,6 @@ def roundsignificant(number):
         return "0"
     scinot = False
     digits = -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1
-    print(digits)
     if (digits <= 0):
         if ("e" in str(float(number))):
             scinot = True
@@ -63,7 +62,6 @@ def roundsignificant(number):
         if (not "." in out and SIGNIFICANTFIGURES > 1):
             out = out[0:addex] + "." + out[addex:len(out)]
             addex += 1
-        print(str(numSigFigs(out)) + " " + out)
         while (numSigFigs(out) < SIGNIFICANTFIGURES):
             out = out[0:addex] + "0" + out[addex:len(out)]
         return out

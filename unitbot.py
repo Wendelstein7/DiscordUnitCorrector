@@ -19,7 +19,9 @@ import sys
 from datetime import datetime, date
 
 import discord
+from discord.channel import TextChannel
 from discord.ext import commands
+from discord.member import Member
 
 import unitconversion
 import unitpedialib
@@ -37,10 +39,32 @@ async def on_ready():
 
 @bot.event
 async def on_message(message): # Catches send messages and corrects non-SI units if neccesary. Most of the code behind this is in 'unitconversion.py'.
-    if bot.user.id is not message.author.id and message.author.bot is False and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
+    author = message.author
+    if bot.user.id is not author.id and author.bot is False:
+        user_roles = None
+        bot_roles = None
         processedMessage = unitconversion.process(message.content)
+        polite = False
+        if isinstance(message.channel, TextChannel):
+            for member in message.channel.members:
+                if (member.id == author.id):
+                    user_roles = member.roles
+                if (member.id == bot.user.id):
+                    bot_roles = member.roles
+            for role in user_roles:
+                if str(role) == 'imperial certified':
+                    processedMessage = None
+                if str(role) == 'politeconversions':
+                    polite = True
+            for role in bot_roles:
+                if str(role) == 'politeconversions' or str(role) == 'polite':
+                    polite = True
         if processedMessage is not None:
-            correctionText = ("I think " + (message.author.name if message.guild is not None else "you") + " meant to say: ```" + processedMessage + "```")
+            name = (message.author.display_name if message.guild is not None else "you")
+            if polite:
+                correctionText = "I converted " + name + "'s message to metric units: ```" + processedMessage + "```"
+            else:
+                correctionText = "I think " + name + " meant to say: ```" + processedMessage + "```"
             await message.channel.send(correctionText)
     await bot.process_commands(message)
 

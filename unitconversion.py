@@ -84,7 +84,7 @@ class UnitType:
 
     def getStringFromMultiple(self, value, multiple):
         numberString = roundsignificant(value / multiple) if USESIGNIFICANT else str(round(value / multiple, DECIMALS))
-        return numberString + (' ' if SPACED else '') + self._multiples[multiple]
+        return numberString + SPACED + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)

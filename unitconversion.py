@@ -8,7 +8,7 @@ import re
 from abc import abstractmethod
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]*)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
@@ -82,10 +82,8 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
-        if numberString[-2:] == ".0":
-            numberString = numberString[:-2]
-        return numberString + SPACED + self._multiples[multiple]
+        numberString = roundsignificant(value / multiple) if USESIGNIFICANT else str(round(value / multiple, DECIMALS))
+        return numberString + (' ' if SPACED else '') + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)

@@ -50,6 +50,7 @@ def roundsignificant(number):
         return "0"
     scinot = False
     digits = -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1
+    digits = -int(floor(log10(abs(round(number, digits)))))+SIGNIFICANTFIGURES-1
     if (digits <= 0):
         if ("e" in str(float(number))):
             scinot = True

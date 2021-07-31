@@ -8,11 +8,11 @@ import re
 from abc import abstractmethod
 from math import log10, floor
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s+$")
+END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
-SPACED = True    # Option: Should there be a space between the number and the unit? DEFAULT: True
+SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
 USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
 SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
 DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
@@ -35,7 +35,7 @@ class UnitType:
         numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
         if numberString[-2:] == ".0":
             numberString = numberString[:-2]
-        return numberString + (' ' if SPACED else '') + self._multiples[multiple]
+        return numberString + SPACED + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -77,6 +77,7 @@ class Unit:
     def convert( self, message ): pass
 
 def convertUnitInModificableMessage( message, unit_regex, toMetric ):
+    global SPACED
     originalText = message.getText()
     if UNICODEMINUS:
         originalText = originalText.replace('−', '-')
@@ -90,7 +91,14 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             while (numberResult.group()[initialSpaceCount].isspace()):
                 prefix += numberResult.group()[initialSpaceCount]
                 initialSpaceCount += 1
+            old_spacing = SPACED
+            postSpaceCount = len(numberResult.group()) - 1
+            SPACED = ""
+            while (numberResult.group()[postSpaceCount].isspace()):
+                SPACED = numberResult.group()[postSpaceCount] + SPACED
+                postSpaceCount -= 1
             metricValue = toMetric( float( numberResult.group().replace(",", ".") ) )
+            SPACED = old_spacing
             if metricValue is None:
                 continue
             repl = {}
@@ -167,7 +175,7 @@ units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )      
 units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )                 #foot-pound
 units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                                 #British thermal unit
 units.append( CaseSensitiveUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                               #calories
-units.append( CaseSensitiveUnit( "kilocalories", "(kc|k?C)al(ories?)?", ENERGY, 4184 ) )       #kilocalories
+units.append( CaseSensitiveUnit( "kilocalories", "(k(ilo)?c|C)al(ories?)?", ENERGY, 4184 ) )       #kilocalories
 units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER, 3500 ) )                    #ton of refrigeration
 units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                                #ergs
 

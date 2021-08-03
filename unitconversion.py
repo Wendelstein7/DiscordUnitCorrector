@@ -55,8 +55,12 @@ class Unit:
 
     def toMetric( self, value ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
-        if self._toSIAddition == 0 and SIValue == 0:
-            return
+        if SIValue == 0:
+            return "0 "+ self._unitType._multiples[1]
+            # techincally this doesn't obey sig figs, but...
+            #  - nobody knows how to do sig figs for the number zero
+            #  - doing sig figs for the number zero looks really weird
+            # so it's not a bug, it's a feature. seriously, check the commit history.
         return self._unitType.getString( SIValue )
 
     def getName( self ):

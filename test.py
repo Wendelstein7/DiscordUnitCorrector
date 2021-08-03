@@ -4,6 +4,7 @@
 # To start unit tests run:
 # python test.py -v
 
+from sigfigs import SigFigCompliantNumber
 import unittest
 from argparse import ArgumentParser
 
@@ -96,7 +97,8 @@ class TestUnitCorrection(unittest.TestCase):
             ["1.2345678901234 inches", "3.1358024409134 cm"],
             ["62. miles", "1.0e+2 km"],
             ["62.2 miles", "100. km"],
-            ["6234 inches", "158.3 m"]
+            ["6234 inches", "158.3 m"],
+            ["0.0 degrees freedom", "-17.8 °C"],
         ]
 
         for pair in unit_pairs:

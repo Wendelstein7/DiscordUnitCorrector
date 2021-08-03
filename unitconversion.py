@@ -6,72 +6,13 @@
 
 import re
 from abc import abstractmethod
-from math import log10, floor
+from sigfigs import SigFigCompliantNumber
 
 END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]*)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
 SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
-USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
-SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
-DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
-
-def numSigFigs(string):
-    lzs = 0
-    preexponential = re.compile("[\s\S]*(?=(e))").search(string)
-    string = preexponential.group() if preexponential else string
-    while((string[lzs] == ".") | (string[lzs] == "0")):
-        lzs += 1
-        if (lzs == len(string)):
-            return 0
-    if ("." in string):
-        if (string.index(".") >= lzs):
-            return len(string) - lzs - 1
-        if (string.index(".") >= 0):
-            return len(string) - lzs
-        return None
-    tzs = len(string) - 1
-    while(string[tzs] == "0"):
-        tzs -= 1
-    return tzs - lzs + 1
-
-# precondition: string is a full-form int, not terminated with a radix
-def scientificnotation(string, sigfigs):
-    out = string[0]+"."
-    i=1
-    while(i<sigfigs):
-        out += string[i]
-        i += 1
-    return out + "e+" + str(len(string)-1)
-
-def roundsignificant(number):
-    if number == 0 or SIGNIFICANTFIGURES == 0:
-        return "0"
-    scinot = False
-    digits = -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1
-    digits = -int(floor(log10(abs(round(number, digits)))))+SIGNIFICANTFIGURES-1
-    if (digits <= 0):
-        if ("e" in str(float(number))):
-            scinot = True
-        number = round(number)
-    out = str(round(number, digits))
-    if (digits > 0):
-        addex = len(out)
-        if ("e" in out):
-            addex = out.index("e")
-        if (not "." in out and SIGNIFICANTFIGURES > 1):
-            out = out[0:addex] + "." + out[addex:len(out)]
-            addex += 1
-        while (numSigFigs(out) < SIGNIFICANTFIGURES):
-            out = out[0:addex] + "0" + out[addex:len(out)]
-        return out
-    bad = numSigFigs(out) != SIGNIFICANTFIGURES
-    if (scinot or (bad and digits != 0)):
-        return scientificnotation(out, SIGNIFICANTFIGURES)
-    if (bad and digits == 0):
-        return out + "."
-    return out
 
 class UnitType:
 
@@ -83,8 +24,7 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        numberString = roundsignificant(value / multiple) if USESIGNIFICANT else str(round(value / multiple, DECIMALS))
-        return numberString + SPACED + self._multiples[multiple]
+        return str(value / multiple) + SPACED + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -127,7 +67,6 @@ class Unit:
 
 def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     global SPACED
-    global SIGNIFICANTFIGURES
     originalText = message.getText()
     if UNICODEMINUS:
         originalText = originalText.replace('−', '-')
@@ -136,7 +75,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
         if numberResult is not None:
-            SIGNIFICANTFIGURES = numSigFigs(numberResult.group().strip())
+            usernumber = SigFigCompliantNumber(numberResult.group().strip().replace(",", "."))
             initialSpaceCount = 0
             prefix = ""
             while (numberResult.group()[initialSpaceCount].isspace()):
@@ -148,7 +87,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             while (numberResult.group()[postSpaceCount].isspace()):
                 SPACED = numberResult.group()[postSpaceCount] + SPACED
                 postSpaceCount -= 1
-            metricValue = toMetric( float( numberResult.group().replace(",", ".") ) )
+            metricValue = toMetric( usernumber )
             SPACED = old_spacing
             if metricValue is None:
                 continue
@@ -165,7 +104,6 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             lastPoint = repl["end"]
         finalMessage += originalText[ lastPoint : ]
         message.setText(finalMessage)
-
 
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):

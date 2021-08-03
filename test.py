@@ -99,7 +99,7 @@ class TestUnitCorrection(unittest.TestCase):
             ["62.2 miles", "100. km"],
             ["6234 inches", "158.3 m"],
             ["0.0 degrees freedom", "-17.8 °C"],
-            ["32.0 degrees freedom", "0.0 °C"]
+            ["32.0 degrees freedom", "0 °C"]
         ]
 
         for pair in unit_pairs:

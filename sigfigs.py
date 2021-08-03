@@ -82,18 +82,26 @@ def leastSigDigit(string):
 class SigFigCompliantNumber(SupportsAbs):
 
     def __init__(self, stringRepresentation, *, exact = False, sigfigs = None, leastsigdig = None):
+        if ((exact and sigfigs is not None) or (exact and leastsigdig is not None)):
+            raise ValueError("Cannot specify sig figs / places on an exact number!")
         self.value = float(stringRepresentation)
         self.isNan = False
         self.isZero = False
         if (self.value == 0):
+            if (sigfigs != None):
+                raise ValueError("Cannot specify sig figs on zero!")
             self.isZero = True
-            self.leastSignificantDigit = MAX_SIG_FIGS if exact else leastSigDigit(stringRepresentation)
+            if exact:
+                self.leastSignificantDigit = MAX_SIG_FIGS
+                return
+            if (leastsigdig != None):
+                self.leastSignificantDigit = leastsigdig
+                return
+            self.leastSignificantDigit = leastSigDigit(stringRepresentation)
             return
         if (not isfinite(self.value)):
             self.isNan = True
             return
-        if ((exact and sigfigs is not None) or (exact and leastsigdig is not None)):
-            raise ValueError("Cannot specify sig figs / places on an exact number!")
         if exact:
             self.numSigFigs = MAX_SIG_FIGS
             self.leastSignificantDigit = -int(floor(log10(abs(self.value))))+MAX_SIG_FIGS-1
@@ -113,16 +121,17 @@ class SigFigCompliantNumber(SupportsAbs):
             raise ValueError("Incongruity created!")
 
     # this string output value can always be parsed by float()
+    # when supplied to the constructor it will always recreate the same sigfigcompliantnumber
     def __str__(self):
         if (self.isZero):
-            return "0e" + str(self.leastSignificantDigit)
+            return "0e" + str(-self.leastSignificantDigit)
         if (self.isNan):
             return "nan"
         return roundsignificant(self.value, self.numSigFigs)
 
     # all math operations should behave under effectively the same contract as the python float class
     # if a nonunary operation has a parameter that can be converted to a float rather than a sigfigcompliantnumber, it is converted and treated as exact
-    # operations return sigfigcompliant numbers to indicate the precision embedded in the calculation and its inputs
+    # operations return sigfigcompliantnumbers to indicate the precision embedded in the calculation and its inputs
 
     def __add__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
@@ -144,8 +153,14 @@ class SigFigCompliantNumber(SupportsAbs):
         if (isinstance(other, SigFigCompliantNumber)):
             if (self.isNan or other.isNan):
                 return SigFigCompliantNumber(self.value * other.value)
-            if (self.isZero or other.isZero):
-                return ZERO_VALUE
+            if (self.isZero):
+                outLeastSigDigit = self.leastSignificantDigit
+                outLeastSigDigit += int(round(log10(other.value)))
+                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
+            if (other.isZero):
+                outLeastSigDigit = other.leastSignificantDigit
+                outLeastSigDigit += int(round(log10(self.value)))
+                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
             return SigFigCompliantNumber(self.value * other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
         else:
             return self * SigFigCompliantNumber(other, exact=True)
@@ -157,7 +172,9 @@ class SigFigCompliantNumber(SupportsAbs):
             if (self.isNan or other.isNan):
                 return SigFigCompliantNumber(self.value + other.value)
             if (self.isZero):
-                return ZERO_VALUE
+                outLeastSigDigit = self.leastSignificantDigit
+                outLeastSigDigit -= int(round(log10(other.value)))
+                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
             return SigFigCompliantNumber(self.value / other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
         else:
             return self / SigFigCompliantNumber(other, exact=True)
@@ -205,5 +222,3 @@ class SigFigCompliantNumber(SupportsAbs):
             return SigFigCompliantNumber(-self.value, sigfigs=self.numSigFigs, leastsigdig=self.leastSignificantDigit)
 
 MAX_SIG_FIGS = 1024
-
-ZERO_VALUE = SigFigCompliantNumber("0")

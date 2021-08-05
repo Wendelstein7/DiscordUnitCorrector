@@ -14,6 +14,10 @@ REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
 SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
 
+SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
+                            # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
+USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
+
 class UnitType:
 
     def __init__( self ):
@@ -24,7 +28,13 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        return str(value / multiple) + SPACED + self._multiples[multiple]
+        numstr = str(value / multiple)
+        if (SIGFIG_COMPLIANCE_LEVEL == 0 and numstr[len(numstr)-1] == '.'):
+            numstr = numstr[0:-1]
+        if (USE_TENPOW):
+            numstr = numstr.replace("e+", "*10^")
+            numstr = numstr.replace("e", "*10^")
+        return numstr + SPACED + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -56,7 +66,13 @@ class Unit:
     def toMetric( self, value ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
         if SIValue == 0:
-            return "0 "+ self._unitType._multiples[1]
+            if (SIGFIG_COMPLIANCE_LEVEL == 2):
+                numstr = str(SIValue)
+                if USE_TENPOW:
+                    numstr = numstr.replace("e+", "*10^")
+                    numstr = numstr.replace("e", "*10^")
+                return numstr + SPACED + self._unitType._multiples[1]
+            return "0" + SPACED + self._unitType._multiples[1]
             # techincally this doesn't obey sig figs, but...
             #  - nobody knows how to do sig figs for the number zero
             #  - doing sig figs for the number zero looks really weird

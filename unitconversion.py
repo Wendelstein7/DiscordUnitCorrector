@@ -29,8 +29,13 @@ class UnitType:
 
     def getStringFromMultiple(self, value, multiple):
         numstr = str(value / multiple)
-        if (SIGFIG_COMPLIANCE_LEVEL == 0 and numstr[len(numstr)-1] == '.'):
-            numstr = numstr[0:-1]
+        if (SIGFIG_COMPLIANCE_LEVEL == 0):
+            if (numstr[len(numstr)-1] == '.'):
+                numstr = numstr[0:-1]
+            if ("e" in numstr):
+                numstr = str(float(numstr))
+                if (not "e" in numstr and numstr.endswith(".0")):
+                    numstr = numstr[0:-2]
         if (USE_TENPOW):
             numstr = numstr.replace("e+", "*10^")
             numstr = numstr.replace("e", "*10^")
@@ -73,10 +78,6 @@ class Unit:
                     numstr = numstr.replace("e", "*10^")
                 return numstr + SPACED + self._unitType._multiples[1]
             return "0" + SPACED + self._unitType._multiples[1]
-            # techincally this doesn't obey sig figs, but...
-            #  - nobody knows how to do sig figs for the number zero
-            #  - doing sig figs for the number zero looks really weird
-            # so it's not a bug, it's a feature. seriously, check the commit history.
         return self._unitType.getString( SIValue )
 
     def getName( self ):

@@ -155,11 +155,11 @@ class SigFigCompliantNumber(SupportsAbs):
                 return SigFigCompliantNumber(self.value * other.value)
             if (self.isZero):
                 outLeastSigDigit = self.leastSignificantDigit
-                outLeastSigDigit += int(round(log10(other.value)))
+                outLeastSigDigit -= int(round(log10(other.value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
             if (other.isZero):
                 outLeastSigDigit = other.leastSignificantDigit
-                outLeastSigDigit += int(round(log10(self.value)))
+                outLeastSigDigit -= int(round(log10(self.value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
             return SigFigCompliantNumber(self.value * other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
         else:
@@ -173,7 +173,7 @@ class SigFigCompliantNumber(SupportsAbs):
                 return SigFigCompliantNumber(self.value + other.value)
             if (self.isZero):
                 outLeastSigDigit = self.leastSignificantDigit
-                outLeastSigDigit -= int(round(log10(other.value)))
+                outLeastSigDigit += int(round(log10(other.value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
             return SigFigCompliantNumber(self.value / other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
         else:

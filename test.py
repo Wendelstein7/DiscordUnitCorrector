@@ -129,9 +129,11 @@ class TestUnitCorrection(unittest.TestCase):
             ["I'm  5.2    feet and  6   inches  tall.", "I'm  1.74   m  tall."],
             ["3-foot-8-inch-long potato", "1.1-m-long potato"],
             ["3 foot -8 inch long potato", "0.71-m-long potato"],
-            ["3-  foot 8- inch long potato", "0.71- m long potato"]
+            ["3-  foot 8- inch long potato", "0.71- m long potato"],
             ["10°5'10\"", "10°5'10\""],
-            ["10 deg 5 ' 10 \""]
+            ["10 deg 5 ' 10 \"", "10 deg 5 ' 10 \""],
+            ["3ft+8in", "0.71m"],
+            ["it's a 3-in-1 football/basketball/volleyball!", "it's a 3-in-1 football/basketball/volleyball!"]
         ]
 
         for pair in unit_pairs:

@@ -43,11 +43,12 @@ def roundsignificant(number, sigfigs):
     scinot = False
     digits = -int(floor(log10(abs(number))))+sigfigs-1
     digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1
+    out = round(number, digits)
     if (digits <= 0):
         if ("e" in str(float(number))):
             scinot = True
-        number = round(number)
-    out = str(round(number, digits))
+        out = round(out)
+    out = str(out)
     if (digits > 0):
         addex = len(out)
         if ("e" in out):

@@ -8,11 +8,37 @@ import re
 from abc import abstractmethod
 from sigfigs import SigFigCompliantNumber
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]*)?\s*$")
+EMPTY_RGX = re.compile("\A\b\Z^$")
+ALL_DASHES_RGX_STR = "(\-|‐|‑|–|‒|−|﹘|﹘|﹘)"
+PLACE_VALUE_SEPARATOR_RGXS = ["\\.", "\\s", "٬", ",", "('|‘|’|\\`|′)", "_"]
+RADIX_RGX_STRS = ["٫", "\\.", "⎖", ","]
+NUMBER_RGX_STRS = [(ALL_DASHES_RGX_STR+"?(\\d+)", EMPTY_RGX, EMPTY_RGX)]
+for radix in RADIX_RGX_STRS:
+    NUMBER_RGX_STRS.append((
+        ALL_DASHES_RGX_STR+"?\\d+"+radix+"\\d*",
+        EMPTY_RGX,
+        re.compile(radix)
+    ))
+for radix in RADIX_RGX_STRS:
+    for pvsep in PLACE_VALUE_SEPARATOR_RGXS:
+        if (radix == pvsep):
+            continue
+        NUMBER_RGX_STRS.append((
+            ALL_DASHES_RGX_STR+"?(\\d*)("+pvsep+"(\\d{2,3})+)*"+radix+"(((\\d{2,3})+"+pvsep+")*\\d+)?",
+            re.compile(pvsep),
+            re.compile(radix)
+        ))
+        NUMBER_RGX_STRS.append((
+            ALL_DASHES_RGX_STR+"?(\\d*)("+pvsep+"(\\d{2,3})+)+",
+            re.compile(pvsep),
+            re.compile(radix)
+        ))
+NUMBER_UNIT_SPACERS_RGX = re.compile("\\s*$")
+END_NUMBER_RGXS = []
+for rgx in NUMBER_RGX_STRS:
+    END_NUMBER_RGXS.append((re.compile(rgx[0]+"$"), rgx[1], rgx[2]))
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
-
-UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
-SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
+FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )")
 
 SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
                             # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
@@ -27,7 +53,7 @@ class UnitType:
         self._multiples[ multiple ] = unit
         return self
 
-    def getStringFromMultiple(self, value, multiple):
+    def getStringFromMultiple(self, value, multiple, SPACING):
         numstr = str(value / multiple)
         if (SIGFIG_COMPLIANCE_LEVEL == 0):
             if (numstr[len(numstr)-1] == '.'):
@@ -39,14 +65,14 @@ class UnitType:
         if (USE_TENPOW):
             numstr = numstr.replace("e+", "*10^")
             numstr = numstr.replace("e", "*10^")
-        return numstr + SPACED + self._multiples[multiple]
+        return numstr + SPACING + self._multiples[multiple]
 
-    def getString( self, value ):
+    def getString( self, value, SPACING ):
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
             if abs(value) > multiple/2:
-                return self.getStringFromMultiple(value, multiple)
-        return self.getStringFromMultiple( value, sortedMultiples[-1] )
+                return self.getStringFromMultiple(value, multiple, SPACING)
+        return self.getStringFromMultiple( value, sortedMultiples[-1], SPACING )
 
 DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
@@ -68,7 +94,7 @@ class Unit:
         self._toSIMultiplication = toSIMultiplication
         self._toSIAddition = toSIAddition
 
-    def toMetric( self, value ):
+    def toMetric( self, value, SPACING ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
         if SIValue == 0:
             if (SIGFIG_COMPLIANCE_LEVEL == 2):
@@ -76,9 +102,9 @@ class Unit:
                 if USE_TENPOW:
                     numstr = numstr.replace("e+", "*10^")
                     numstr = numstr.replace("e", "*10^")
-                return numstr + SPACED + self._unitType._multiples[1]
-            return "0" + SPACED + self._unitType._multiples[1]
-        return self._unitType.getString( SIValue )
+                return numstr + SPACING + self._unitType._multiples[1]
+            return "0" + SPACING + self._unitType._multiples[1]
+        return self._unitType.getString( SIValue, SPACING )
 
     def getName( self ):
         return self._friendlyName
@@ -86,37 +112,57 @@ class Unit:
     @abstractmethod
     def convert( self, message ): pass
 
+def readNumFromStringEnd( string ):
+    bestrgx = None
+    bestlen = 0
+    for endnumrgx in END_NUMBER_RGXS:
+        numberResult = endnumrgx[0].search(string)
+        if numberResult is not None:
+            if (len(numberResult.group()) > bestlen):
+                bestrgx = endnumrgx
+                bestlen = len(numberResult.group())
+    if (bestrgx is not None):
+        numberResult = bestrgx[0].search(string)
+        cleanedstring = numberResult.group().strip()
+        cleanedstring = bestrgx[1].sub("", cleanedstring)
+        cleanedstring = bestrgx[2].sub(".", cleanedstring)
+        return (SigFigCompliantNumber(cleanedstring), string[0 : numberResult.start()])
+
 def convertUnitInModificableMessage( message, unit_regex, toMetric ):
-    global SPACED
     originalText = message.getText()
-    if UNICODEMINUS:
-        originalText = originalText.replace('−', '-')
     iterator = unit_regex.finditer( originalText )
     replacements = []
     for find in iterator:
-        numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
-        if numberResult is not None:
-            usernumber = SigFigCompliantNumber(numberResult.group().strip().replace(",", "."))
-            initialSpaceCount = 0
-            prefix = ""
-            while (numberResult.group()[initialSpaceCount].isspace()):
-                prefix += numberResult.group()[initialSpaceCount]
-                initialSpaceCount += 1
-            old_spacing = SPACED
-            postSpaceCount = len(numberResult.group()) - 1
-            SPACED = ""
-            while (numberResult.group()[postSpaceCount].isspace()):
-                SPACED = numberResult.group()[postSpaceCount] + SPACED
-                postSpaceCount -= 1
-            metricValue = toMetric( usernumber )
-            SPACED = old_spacing
-            if metricValue is None:
-                continue
-            repl = {}
-            repl[ "start" ] = numberResult.start()
-            repl[ "text"  ] = (prefix) + metricValue
-            repl[ "end" ] = find.end()
-            replacements.append(repl)
+        preunitstr = originalText[ 0 : find.start() ]
+        spacerRes = NUMBER_UNIT_SPACERS_RGX.search(preunitstr)
+        if spacerRes is None:
+            continue
+        SPACING = spacerRes.group()
+        preunitstr = preunitstr[ 0 : spacerRes.start() ]
+        read = readNumFromStringEnd(preunitstr)
+        if read is None:
+            continue
+        (usernumber, preunitstr) = read
+        metricValue = toMetric( usernumber, SPACING )
+        if metricValue is None:
+            continue
+        # get all superunits of this found unit
+        #   a superunit is any bigger unit of the same type, where both units are proportional units when compared with the SI
+        # check if each superunit terminates "preunitstr"
+        #   to do this, each unit should have a generated list of its superunits
+        #   and each of those units should have a different compiled regex from the non-super version of that unit
+        #   specifically, it has an extra lookahead for the end of the string `(?=$)` tacked on
+        # if a superunit is found, repeat the procedure from line 136 to 165 on that unit, including this procedure
+        #   :O recursion :O insert random meme
+        # then convert one unit to the other, so that they're all in one unit, and determine the correct number of sig figs
+        # collect the different strings used by the different units as SPACING and determine a compromise output spacing
+        # perform the replacement with the final, computed value
+        # edge cases are best dealt with outside of this in separate regex-searching procedures or in special superunit definitions
+        repl = {}
+        repl[ "start" ] = len(preunitstr)
+        repl[ "text"  ] = metricValue
+        repl[ "end" ] = find.end()
+        replacements.append(repl)
     if len(replacements)>0:
         lastPoint = 0
         finalMessage = ""
@@ -130,7 +176,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
 class NormalUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
         super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))", re.IGNORECASE )
 
     def convert( self, message ):
         convertUnitInModificableMessage( message, self._regex, self.toMetric )
@@ -138,7 +184,7 @@ class NormalUnit( Unit ):
 class CaseSensitiveUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
         super( CaseSensitiveUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))" )
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))" )
     
     def convert( self, message ):
         return convertUnitInModificableMessage( message, self._regex, self.toMetric)
@@ -239,7 +285,7 @@ units.append( NormalUnit( "horsepower", "horse ?power", POWER, 745.699872 ) )   
 
 #Processes a string, converting freedom units to science units.
 def process(message):
-    modificableMessage = ModificableMessage(REMOVE_REGEX.sub("", message))
+    modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
     for u in units:
         u.convert(modificableMessage)
     if modificableMessage.isModified():

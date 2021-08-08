@@ -114,8 +114,9 @@ class TestUnitCorrection(unittest.TestCase):
             ["6 pounds, 2.1 ounces", "2.78 kg"],
             ["6  pounds  4.50  ounces", "2.8491  kg"],
             ["6.0 feet and 170 pounds", "1.8 m and 77 kg"],
-            # ["4'2", "1.3m"],         # add in special case of inch label being unneccessary when a number immediately follows a foot measurement
-            # ["100'11\"", "30.76m"],  # add in special case of ' being an illegal pvsep in feet and in inch measurements
+            ["4'2", "1.3m"],
+            ["5  foot  2", "1.6  m"],
+            ["100'11\"", "30.76m"],
             ["4 foot 20 inches", "2 m"],
             ["5 oz t, 19 dwt and 20 grains", "186.4 g"],
             ["2 gallons 30 fluid ounces", "8.46 L"],

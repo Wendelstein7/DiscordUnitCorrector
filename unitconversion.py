@@ -11,8 +11,18 @@ from sigfigs import SigFigCompliantNumber
 
 EMPTY_RGX = re.compile("\A\b\Z^$")
 ALL_DASHES_RGX_STR = "(-|‐|‑|–|‒|−|﹘|﹘|﹘)"
-PLACE_VALUE_SEPARATOR_RGXS = ["\\.", "\\s", "٬", ",", "('|‘|’|\\`|′)", "_"]
+ALL_PRIMES_ARR = ["'", "‘", "’", "`", "′", "´"]
+ALL_PRIMES_RGX_STR = "("
+for prime in ALL_PRIMES_ARR:
+    ALL_PRIMES_RGX_STR += re.escape(prime) + "|"
+ALL_PRIMES_RGX_STR = ALL_PRIMES_RGX_STR[:-1]
+ALL_PRIMES_RGX_STR += ")"
+PLACE_VALUE_SEPARATOR_RGX_STRS = ["\\.", "\\s", "٬", ",", ALL_PRIMES_RGX_STR, "_"]
 RADIX_RGX_STRS = ["٫", "\\.", "⎖", ","]
+def radixAndPvsepOverlap(radixrgx, pvseprgx):
+    return (radixrgx == pvseprgx)
+    # note that if RADIX_RGX_STRS or PLACE_VALUE_SEPARATOR_RGX_STRS changes,
+    # then this implementation may also need to change
 NUMBER_RGX_STRS = [(ALL_DASHES_RGX_STR+"?(\\d+)", EMPTY_RGX, EMPTY_RGX)]
 for radix in RADIX_RGX_STRS:
     NUMBER_RGX_STRS.append((
@@ -21,11 +31,14 @@ for radix in RADIX_RGX_STRS:
         re.compile(radix)
     ))
 for radix in RADIX_RGX_STRS:
-    for pvsep in PLACE_VALUE_SEPARATOR_RGXS:
+    for pvsep in PLACE_VALUE_SEPARATOR_RGX_STRS:
         if (radix == pvsep):
             continue
+        preradix = "\\d+"
+        if radixAndPvsepOverlap(radix, pvsep):
+            preradix = ""
         NUMBER_RGX_STRS.append((
-            ALL_DASHES_RGX_STR+"?(("+radix+"(\\d{2,}"+pvsep+")+\\d+)|(\\d+"+radix+"(\\d{2,}"+pvsep+"){2,}\\d+))",
+            ALL_DASHES_RGX_STR+"?(("+preradix+radix+"(\\d{2,}"+pvsep+")+\\d+)|(\\d+"+radix+"(\\d{2,}"+pvsep+"){2,}\\d+))",
             re.compile(pvsep),
             re.compile(radix)
         ))
@@ -34,11 +47,15 @@ for radix in RADIX_RGX_STRS:
             re.compile(pvsep),
             re.compile(radix)
         ))
-NUMBER_UNIT_SPACERS_RGX = re.compile("(\\s|"+ALL_DASHES_RGX_STR+")*$")
+NUMBER_UNIT_SPACERS_END_RGX = re.compile("(\\s|"+ALL_DASHES_RGX_STR+")*$")
+NUMBER_UNIT_SPACERS_START_RGX = re.compile("^(\\s|"+ALL_DASHES_RGX_STR+")*")
 END_NUMBER_RGXS = []
+START_NUMBER_RGXS = []
 for rgx in NUMBER_RGX_STRS:
     END_NUMBER_RGXS.append((re.compile(rgx[0]+"$"), rgx[1], rgx[2]))
-SUPERUNIT_SUBUNIT_SPACER_RGX = re.compile("(\\s|,|and|\\+|"+ALL_DASHES_RGX_STR+")*$")
+    START_NUMBER_RGXS.append((re.compile("^"+rgx[0]), rgx[1], rgx[2]))
+SUPERUNIT_SUBUNIT_SPACER_END_RGX = re.compile("(\\s|,|and|\\+|"+ALL_DASHES_RGX_STR+")*$")
+SUPERUNIT_SUBUNIT_SPACER_START_RGX = re.compile("^(\\s|,|and|\\+|"+ALL_DASHES_RGX_STR+")*")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 END_SPACE_RGX = re.compile("\\s$")
 FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )")
@@ -122,14 +139,69 @@ def readNumFromStringEnd( string ):
     bestrgx = None
     bestlen = 0
     for endnumrgx in END_NUMBER_RGXS:
+        disallowed = False
         numberResult = endnumrgx[0].search(string)
-        if numberResult is not None:
-            if (len(numberResult.group()) > bestlen):
-                bestrgx = endnumrgx
-                bestlen = len(numberResult.group())
+        if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
+            disallowed = True
+        if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
+            q = string[0:numberResult.start()]
+            q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
+            val = cleanNumber(numberResult.group().split(" ")[0], endnumrgx[1], endnumrgx[2])
+            if ((superunits_by_name_lookup["foot"]._regex.search(q) is not None) and (val <= 12)):
+                disallowed = True
+        if not disallowed:
+            bestrgx = endnumrgx
+            bestlen = len(numberResult.group())
     if (bestrgx is not None):
         numberResult = bestrgx[0].search(string)
         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
+
+def readNumFromStringEndDisallowPrime( string ):
+    bestrgx = None
+    bestlen = 0
+    for endnumrgx in END_NUMBER_RGXS:
+        disallowed = False
+        for prime in ALL_PRIMES_ARR:
+            if ((endnumrgx[1].search(prime) is not None) or (endnumrgx[2].search(prime) is not None)):
+                disallowed = True
+                break
+        numberResult = endnumrgx[0].search(string)
+        if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
+            disallowed = True
+        if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
+            q = string[0:numberResult.start()]
+            q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
+            if superunits_by_name_lookup["foot"]._regex.search(q) is not None:
+                disallowed = True
+        if not disallowed:
+            bestrgx = endnumrgx
+            bestlen = len(numberResult.group())
+    if (bestrgx is not None):
+        numberResult = bestrgx[0].search(string)
+        return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
+
+def readNumFromStringStartDisallowPrimeAndSpace( string ):
+    bestrgx = None
+    bestlen = 0
+    for startnumrgx in START_NUMBER_RGXS:
+        disallowed = False
+        for prime in ALL_PRIMES_ARR:
+            if ((startnumrgx[1].search(prime) is not None) or (startnumrgx[2].search(prime) is not None)):
+                disallowed = True
+                break
+            if ((startnumrgx[1].search(" ") is not None) or (startnumrgx[2].search(" ") is not None)):
+                disallowed = True
+                break
+        if (disallowed):
+            continue
+        numberResult = startnumrgx[0].search(string)
+        if numberResult is not None:
+            if (len(numberResult.group()) > bestlen):
+                bestrgx = startnumrgx
+                bestlen = len(numberResult.group())
+    if (bestrgx is not None):
+        numberResult = bestrgx[0].search(string)
+        return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[numberResult.end():])
 
 def cleanNumber(uncleanstring, pvsep, radix):
     cleanedstring = uncleanstring.strip()
@@ -222,6 +294,8 @@ def directStringAverage(pfstrs, biasdown=False):
         if " " in charoptions:
             return "".join(l * [" "])
         else:
+            # at this point, as a last resort
+            # the compromise will occur by repating a random-seeming, but deterministic character selected from the options
             FAKE_RANDOM_FACTOR = 61.091056745
             c = charoptions[int((len(charoptions) + len(charoptions) * sin(FAKE_RANDOM_FACTOR * len(charoptions))) / 2)]
             return "".join(l * [c])
@@ -265,6 +339,24 @@ def toLowestTerms(a, b):
             x += 1
     return (a, b)
 
+def combineSuperAndSubunits(superunitval, subunitval, ratio):
+    if (subunitval > ratio or subunitval.leastSignificantDigit > 0 or subunitval < 0):
+        subunitval += (superunitval * ratio).getExactValue()
+        superunitoverprecision = (superunitval * ratio).leastSignificantDigit - subunitval.leastSignificantDigit
+        if (superunitoverprecision > 0):
+            subunitval.numSigFigs += superunitoverprecision
+            subunitval.leastSignificantDigit += superunitoverprecision
+    else:
+        (_, denom) = toLowestTerms(subunitval.getExactValue(), ratio)
+        mindec = int(log10(5*denom))
+        superunitval += subunitval / ratio
+        superunitunderprecision = mindec - superunitval.leastSignificantDigit
+        if (superunitunderprecision > 0):
+            superunitval.numSigFigs += superunitunderprecision
+            superunitval.leastSignificantDigit += superunitunderprecision
+        subunitval = superunitval * ratio
+    return subunitval
+
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
@@ -286,10 +378,36 @@ class NormalUnit( Unit ):
                 continue
             (preunitstr, usernumber, spacings) = value
             metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
+            end = find.end()
+            # here lies one of the extremely special cases
+            if (self._friendlyName == "foot"):
+                end2 = SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(originalText[end:]).end() + end
+                potentialnum = readNumFromStringStartDisallowPrimeAndSpace(originalText[end2:])
+                if potentialnum is not None:
+                    ((a, b, c), remstr) = potentialnum
+                    spclen = NUMBER_UNIT_SPACERS_START_RGX.search(remstr).start()
+                    remstr = remstr[spclen:]
+                    end2 += len(a)
+                    end2 += spclen
+                    belongstoother=False
+                    for unit in units:
+                        pmatch = unit._regex.search(remstr)
+                        if pmatch is not None:
+                            belongstoother = True
+                            break
+                    if not belongstoother:
+                        actualnum = cleanNumber(a, b, c)
+                        if actualnum < 12 and actualnum >= 0:
+                            radixcheck = c.search(a)
+                            if (radixcheck is None) or (radixcheck.end() == len(a)):
+                                ratio = 12
+                                end = end2 if (radixcheck is None) else end2-1
+                                usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio) / ratio
+                                metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
             repl = {}
             repl[ "start" ] = len(preunitstr)
             repl[ "text"  ] = metricValue
-            repl[ "end" ] = find.end()
+            repl[ "end" ] = end
             replacements.append(repl)
         if len(replacements)>0:
             lastPoint = 0
@@ -301,17 +419,22 @@ class NormalUnit( Unit ):
             message.setText(finalMessage)
     
     def getValueFromIteration(self, string, spacings = []):
-        spacerRes = NUMBER_UNIT_SPACERS_RGX.search(string)
+        spacerRes = NUMBER_UNIT_SPACERS_END_RGX.search(string)
         if spacerRes is None:
             return None
         spacing = spacerRes.group()
         preunitstr = string[ 0 : spacerRes.start() ]
-        read = readNumFromStringEnd(preunitstr)
+        read = None
+        if (self._friendlyName == "foot" or self._friendlyName == "inch"):
+            # here lies one of the extremely special cases
+            read = readNumFromStringEndDisallowPrime(preunitstr)
+        else:
+            read = readNumFromStringEnd(preunitstr)
         if read is None:
             return None
         ((a, b, c), preunitstr) = read
         usernumber = cleanNumber(a, b, c)
-        SPACER = SUPERUNIT_SUBUNIT_SPACER_RGX.search(preunitstr)
+        SPACER = SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(preunitstr)
         nextunitstr = preunitstr[0:SPACER.start()]
         for superunit in superunits[self._key]:
             match = superunit[0]._regex.search(nextunitstr)
@@ -325,21 +448,7 @@ class NormalUnit( Unit ):
                 usernumber = cleanNumber(a, b, c)
             (preunitstr, supernumber, spacings) = value
             ratio = superunit[1]
-            if (usernumber > ratio or usernumber.leastSignificantDigit > 0 or usernumber < 0):
-                usernumber += (supernumber * ratio).getExactValue()
-                superunitoverprecision = (supernumber * ratio).leastSignificantDigit - usernumber.leastSignificantDigit
-                if (superunitoverprecision > 0):
-                    usernumber.numSigFigs += superunitoverprecision
-                    usernumber.leastSignificantDigit += superunitoverprecision
-            else:
-                (_, denom) = toLowestTerms(usernumber.getExactValue(), ratio)
-                mindec = int(log10(5*denom))
-                supernumber += usernumber / ratio
-                superunitunderprecision = mindec - supernumber.leastSignificantDigit
-                if (superunitunderprecision > 0):
-                    supernumber.numSigFigs += superunitunderprecision
-                    supernumber.leastSignificantDigit += superunitunderprecision
-                usernumber = supernumber * ratio
+            usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio)
             break
         spacings.insert(0, spacing)
         return (preunitstr, usernumber, spacings)
@@ -432,16 +541,16 @@ units.append( NormalUnit( "slug", "slugs?", MASS, 14593.902937206364829396325459
 units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802.34544 ) )     #hundredweights
 
 #Distance
-units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                             #thou
-units.append( NormalUnit( "inch", "\"|in(ch(es)?)?", DISTANCE, 0.0254 ) )                     #inch
-units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )               #rack units
-units.append( NormalUnit( "foot", "\'|f(oo|ee)?t", DISTANCE, 0.3048 ) )                       #foot
-units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                           #yard
-units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
-units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                          #fathom
-units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.168 ) )                       #furlong
-units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                         #mile
-units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )   #nautical miles
+units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                                   #thou
+units.append( NormalUnit( "inch", "\"|in(ch(es)?)?", DISTANCE, 0.0254 ) )                           #inch
+units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )                     #rack units
+units.append( NormalUnit( "foot", ALL_PRIMES_RGX_STR+"|f(oo|ee)?t", DISTANCE, 0.3048 ) )            #foot
+units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                                 #yard
+units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                                  #Smoot units
+units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                                #fathom
+units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.168 ) )                             #furlong
+units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                               #mile
+units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )         #nautical miles
 
 #Luminous intensity
 #units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens
@@ -454,6 +563,7 @@ units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER,
 # BEGIN SUPERUNIT DEFINITIONS
 
 superunits = {}
+superunits_by_name_lookup = {}
 for key in units:
     superunits[key] = []
     if (key._toSIAddition != 0):
@@ -481,6 +591,15 @@ for key in units:
                 potentialsuperunit._toSIAddition, # this is always zero
                 potentialsuperunit
             ), ratio))
+            superunits_by_name_lookup[potentialsuperunit._friendlyName] = RegexFlagsExposedNormalUnit(
+                potentialsuperunit._friendlyName,
+                potentialsuperunit._regex.pattern + "(?=$)",
+                potentialsuperunit._regex.flags,
+                potentialsuperunit._unitType,
+                potentialsuperunit._toSIMultiplication,
+                potentialsuperunit._toSIAddition, # this is always zero
+                potentialsuperunit
+            )
         else:
             print("Superuniting is not supported for " + type(potentialsuperunit) + "!")
             print("Somebody must've added some code but not fully integrated it *shoves work at you*")

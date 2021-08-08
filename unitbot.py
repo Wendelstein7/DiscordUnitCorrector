@@ -31,7 +31,7 @@ starttime = datetime.utcnow()
 longprefix = ':symbols: UnitCorrector | '
 shortprefix = ':symbols: '
 
-credits = '**HydroNitrogen** (GH: `Wendelstein7`, <@378840449152188419>) - _Creator and main current developer_ \nShaq (GH: `Shaquu`, <@197109511239106561>)** - _Main current developer_ \n**ficolas** (GH: `ficolas2`, <@192368029366091777>) - _Past developer_ \n And other wonderful contributors, see GitHub.'
+credits = '**HydroNitrogen** (GH: `Wendelstein7`, <@378840449152188419>) - _Creator and main current developer_ \n**Shaq** (GH: `Shaquu`, <@197109511239106561>) - _Main current developer_ \n**ficolas** (GH: `ficolas2`, <@192368029366091777>) - _Past developer_ \n ...And other wonderful contributors, see GitHub.'
 
 @bot.event
 async def on_ready():
@@ -69,7 +69,9 @@ async def uptime(ctx): # May be deprecated, changed or removed as !about already
 @bot.command(name='contributors', aliases=['credits', 'developers'])
 async def contributors(ctx): # Will be made a nice embed in the future if there are lots of contributors.
     """Lists the  people who have contributed to this bot."""
-    await ctx.send(shortprefix + 'Contributors: \n' + credits)
+    embed = discord.Embed(title="UnitCorrector contributors and developers", colour=discord.Colour(0xffffff), url="https://github.com/Wendelstein7/DiscordUnitCorrector", description=credits)
+    embed.set_thumbnail(url=bot.user.avatar_url)
+    await ctx.send(embed=embed)
 
 @bot.command(name='unitpedia')
 async def unitpedia(ctx, *, search: str): # Unitpedia! Still needs need a lot of expansion and work. Most of the code behind this is in 'unitpedialib.py'.

@@ -120,6 +120,14 @@ class SigFigCompliantNumber(SupportsAbs):
             raise ValueError("Incongruity created!")
         if (leastsigdig is not None and leastsigdig != self.leastSignificantDigit):
             raise ValueError("Incongruity created!")
+    
+    # even if there's a limited precision on the number, take the internal exact value to have unlimited precision and return it
+    def getExactValue(self):
+        if (self.isZero):
+            return 0
+        if (self.isNan):
+            return float("nan")
+        return self.value
 
     # this string output value can always be parsed by float()
     # when supplied to the constructor it will always recreate the same sigfigcompliantnumber

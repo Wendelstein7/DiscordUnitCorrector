@@ -121,6 +121,8 @@ class TestUnitCorrection(unittest.TestCase):
             ["5 oz t, 19 dwt and 20 grains", "186.4 g"],
             ["2 gallons 30 fluid ounces", "8.46 L"],
             ["I'm 4'5 and 20 pounds.", "I'm 1.3m and 9 kg."],
+            ["I'm 4 foot 5 inches", "I'm 1.3 m"],
+            ["I'm 4 foot 9 pounds", "I'm 1 m 4 kg"],
             [
                 "I'm 4'5, my sister is 3'2, and my mom is 4'3. Wow, we're short!",
                 "I'm 1.3m, my sister is 0.97m, and my mom is 1.3m. Wow, we're short!"

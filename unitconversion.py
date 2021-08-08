@@ -9,6 +9,12 @@ import re
 from abc import abstractmethod
 from sigfigs import SigFigCompliantNumber
 
+SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
+                            # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
+USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
+ASSUME_DECIMAL_INCHES = True# Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
+                            # values like 5'4 be implicitaly assumed to have inch measurements?
+
 EMPTY_RGX = re.compile("\A\b\Z^$")
 ALL_DASHES_RGX_STR = "(-|‐|‑|–|‒|−|﹘|﹘|﹘)"
 ALL_PRIMES_ARR = ["'", "‘", "’", "`", "′", "´"]
@@ -60,19 +66,18 @@ REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 END_SPACE_RGX = re.compile("\\s$")
 FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )")
 
-SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
-                            # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
-USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
-ASSUME_DECIMAL_INCHES = True# Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
-                            # values like 5'4 be implicitaly assumed to have inch measurements?
+unitTypes = []
 
 class UnitType:
 
     def __init__( self ):
         self._multiples = {}
+        self._labelStrings = []
+        unitTypes.append(self)
 
     def addMultiple( self, unit, multiple ):
         self._multiples[ multiple ] = unit
+        self._labelStrings.append(unit)
         return self
 
     def getStringFromMultiple(self, value, multiple, spacing):
@@ -95,6 +100,9 @@ class UnitType:
             if abs(value) > multiple/2:
                 return self.getStringFromMultiple(value, multiple, spacing)
         return self.getStringFromMultiple( value, sortedMultiples[-1], spacing )
+    
+    def getLabelStrings( self ):
+        return self._labelStrings
 
 DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
@@ -108,6 +116,11 @@ TEMPERATURE = UnitType().addMultiple( "°C", 1 )
 PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
 POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 )
+
+LABEL_STRING_START_RGXS = []
+for unitType in unitTypes:
+    for labelString in unitType.getLabelStrings():
+        LABEL_STRING_START_RGXS.append(re.compile("^"+re.escape(labelString)+"($|[^a-zA-Z])"))
 
 class Unit:
     def __init__( self, friendlyName, unitType, toSIMultiplication, toSIAddition ):
@@ -387,17 +400,22 @@ class NormalUnit( Unit ):
                 potentialnum = readNumFromStringStartDisallowPrimeAndSpace(originalText[end2:])
                 if potentialnum is not None:
                     ((a, b, c), remstr) = potentialnum
-                    spclen = NUMBER_UNIT_SPACERS_START_RGX.search(remstr).start()
+                    spclen = NUMBER_UNIT_SPACERS_START_RGX.search(remstr).end()
                     remstr = remstr[spclen:]
                     end2 += len(a)
-                    end2 += spclen
                     belongstoother=False
                     for unit in units:
                         pmatch = unit._regex.search(remstr)
                         if ((pmatch is not None) and (pmatch.start() == 0)):
                             belongstoother = True
                             break
-                    print(belongstoother)
+                    for labelStringRgx in LABEL_STRING_START_RGXS:
+                        if (labelStringRgx.search(remstr) is not None):
+                            # print
+                            belongstoother = True
+                            break
+                    # print(potentialnum)
+                    # print(belongstoother)
                     if not belongstoother:
                         actualnum = cleanNumber(a, b, c)
                         if actualnum < 12 and actualnum >= 0:
@@ -567,6 +585,7 @@ units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER,
 
 superunits = {}
 superunits_by_name_lookup = {}
+unit_by_name_lookup = {}
 for key in units:
     superunits[key] = []
     if (key._toSIAddition != 0):
@@ -608,6 +627,7 @@ for key in units:
             print("Somebody must've added some code but not fully integrated it *shoves work at you*")
             print("Or maybe somebody made a class that COULD subclass NormalUnit but just didn't for no reason.")
             print("That would be nice, it means I just shoved less work at you.")
+    unit_by_name_lookup[key._friendlyName] = key
 
 #Processes a string, converting freedom units to science units.
 def process(message):

@@ -72,11 +72,13 @@ class UnitType:
 
     def __init__( self ):
         self._multiples = {}
+        self._cutoffs = {}
         self._labelStrings = []
         unitTypes.append(self)
 
-    def addMultiple( self, unit, multiple ):
+    def addMultiple( self, unit, multiple, cutoff = 0.5 ):
         self._multiples[ multiple ] = unit
+        self._cutoffs[ multiple ] = cutoff
         self._labelStrings.append(unit)
         return self
 
@@ -97,14 +99,14 @@ class UnitType:
     def getString( self, value, spacing ):
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
-            if abs(value) > multiple/2:
+            if abs(value) > multiple * self._cutoffs[multiple]:
                 return self.getStringFromMultiple(value, multiple, spacing)
         return self.getStringFromMultiple( value, sortedMultiples[-1], spacing )
     
     def getLabelStrings( self ):
         return self._labelStrings
 
-DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
+DISTANCE = UnitType().addMultiple("m", 1, 3.5).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
 VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 ).addMultiple( "µL", 10**-6 ).addMultiple( "nL", 10**-9 ).addMultiple( "pL", 10**-12 )
 ENERGY = UnitType().addMultiple( "J", 1 ).addMultiple( "TJ", 10**12 ).addMultiple( "GJ", 10**9 ).addMultiple( "MJ", 10**6 ).addMultiple( "kJ", 10**3 ).addMultiple( "mJ", 10**-3 ).addMultiple( "µJ", 10**-6 ).addMultiple( "nJ", 10**-9 )

@@ -63,6 +63,8 @@ FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )
 SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
                             # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
 USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
+ASSUME_DECIMAL_INCHES = True# Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
+                            # values like 5'4 be implicitaly assumed to have inch measurements?
 
 class UnitType:
 
@@ -392,16 +394,17 @@ class NormalUnit( Unit ):
                     belongstoother=False
                     for unit in units:
                         pmatch = unit._regex.search(remstr)
-                        if pmatch is not None:
+                        if ((pmatch is not None) and (pmatch.start() == 0)):
                             belongstoother = True
                             break
+                    print(belongstoother)
                     if not belongstoother:
                         actualnum = cleanNumber(a, b, c)
                         if actualnum < 12 and actualnum >= 0:
                             radixcheck = c.search(a)
-                            if (radixcheck is None) or (radixcheck.end() == len(a)):
+                            if (radixcheck is None) or (radixcheck.end() == len(a)) or ASSUME_DECIMAL_INCHES:
                                 ratio = 12
-                                end = end2 if (radixcheck is None) else end2-1
+                                end = end2 if ((radixcheck is None) or (radixcheck.end() != len(a))) else end2-1
                                 usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio) / ratio
                                 metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
             repl = {}

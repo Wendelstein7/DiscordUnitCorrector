@@ -252,7 +252,6 @@ def compromiseBetweenStrings( stringarr ):
             pfstrs.pop(pop)
         for cut in cuts:
             pfstrs[atirev[cut]] = pfstrs[atirev[cut]][1:]
-    # print(prefix, pfstrs)
     postfix = ""
     while True:
         ati = []
@@ -354,8 +353,8 @@ def toLowestTerms(a, b):
             x += 1
     return (a, b)
 
-def combineSuperAndSubunits(superunitval, subunitval, ratio):
-    if (subunitval > ratio or subunitval.leastSignificantDigit > 0 or subunitval < 0):
+def combineSuperAndSubunits(superunitval, subunitval, ratio, subunithasdot = False):
+    if (subunitval > ratio or subunitval.leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
         subunitval += (superunitval * ratio).getExactValue()
         superunitoverprecision = (superunitval * ratio).leastSignificantDigit - subunitval.leastSignificantDigit
         if (superunitoverprecision > 0):
@@ -391,8 +390,8 @@ class NormalUnit( Unit ):
             value = self.getValueFromIteration(preunitstr, [])
             if value is None:
                 continue
-            (preunitstr, usernumber, spacings) = value
-            metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
+            (preunitstr, usernumber, spacings, conversionFormula) = value
+            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings))
             end = find.end()
             # here lies one of the extremely special cases
             if (self._friendlyName == "foot"):
@@ -411,19 +410,17 @@ class NormalUnit( Unit ):
                             break
                     for labelStringRgx in LABEL_STRING_START_RGXS:
                         if (labelStringRgx.search(remstr) is not None):
-                            # print
                             belongstoother = True
                             break
-                    # print(potentialnum)
-                    # print(belongstoother)
                     if not belongstoother:
                         actualnum = cleanNumber(a, b, c)
                         if actualnum < 12 and actualnum >= 0:
                             radixcheck = c.search(a)
                             if (radixcheck is None) or (radixcheck.end() == len(a)) or ASSUME_DECIMAL_INCHES:
                                 ratio = 12
-                                end = end2 if ((radixcheck is None) or (radixcheck.end() != len(a))) else end2-1
-                                usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio) / ratio
+                                terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(a))
+                                end = end2 if not terminatingradix else end2-1
+                                usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio, terminatingradix) / ratio
                                 metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
             repl = {}
             repl[ "start" ] = len(preunitstr)
@@ -446,8 +443,8 @@ class NormalUnit( Unit ):
         spacing = spacerRes.group()
         preunitstr = string[ 0 : spacerRes.start() ]
         read = None
+        # here lies one of the extremely special cases
         if (self._friendlyName == "foot" or self._friendlyName == "inch"):
-            # here lies one of the extremely special cases
             read = readNumFromStringEndDisallowPrime(preunitstr)
         else:
             read = readNumFromStringEnd(preunitstr)
@@ -457,6 +454,7 @@ class NormalUnit( Unit ):
         usernumber = cleanNumber(a, b, c)
         SPACER = SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(preunitstr)
         nextunitstr = preunitstr[0:SPACER.start()]
+        match = None
         for superunit in superunits[self._key]:
             match = superunit[0]._regex.search(nextunitstr)
             if match is None:
@@ -467,12 +465,30 @@ class NormalUnit( Unit ):
             if ((a.startswith(",") or usernumber < 0) and (SPACER.span()[1] == SPACER.span()[0])):
                 a = a[1:]
                 usernumber = cleanNumber(a, b, c)
-            (preunitstr, supernumber, spacings) = value
+            (preunitstr, supernumber, spacings, _) = value
             ratio = superunit[1]
-            usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio)
+            usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio, c.search(a) is not None)
             break
+        conversionFormula = self.toMetric
+        # here lies one of the extremely special cases
+        if (match is None and self._friendlyName == "ounce"):
+            for superunit in superunits[unit_by_name_lookup["fluid ounce"]]:
+                match = superunit[0]._regex.search(nextunitstr)
+                if match is None:
+                    continue
+                value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], spacings)
+                if value is None:
+                    continue
+                if ((a.startswith(",") or usernumber < 0) and (SPACER.span()[1] == SPACER.span()[0])):
+                    a = a[1:]
+                    usernumber = cleanNumber(a, b, c)
+                (preunitstr, supernumber, spacings, _) = value
+                ratio = superunit[1]
+                usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio, c.search(a) is not None)
+                conversionFormula = unit_by_name_lookup["fluid ounce"].toMetric
+                break
         spacings.insert(0, spacing)
-        return (preunitstr, usernumber, spacings)
+        return (preunitstr, usernumber, spacings, conversionFormula)
 
 class CaseSensitiveNormalUnit( NormalUnit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
@@ -513,6 +529,18 @@ units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141056 ) )              
 units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                  #acre
 units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", AREA, 2589988.110336 ) )    #mile squared
 
+#Mass
+units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                          #grains
+units.append( NormalUnit( "pennyweight", "penny ?weights?|dwt", MASS, 1.55517384 ) )        #pennywheight
+units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                       #drams
+units.append( NormalUnit( "ounce", "ounces?|(oz(?! t))", MASS, 28.349523125 ) )             #ounces
+units.append( NormalUnit( "troy ounce", "troy ?ounces?|oz t", MASS, 31.1034768 ) )          #troy ounces
+units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )              #troy pound
+units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                      #pounds
+units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.29318 ) )                 #stones
+units.append( NormalUnit( "slug", "slugs?", MASS, 14593.90293720636482939632545931759 ) )   #slug
+units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802.34544 ) )     #hundredweights
+
 #Volume
 units.append( NormalUnit( "teaspoon", "tsp|teaspoons?", VOLUME, 0.00492892159375 ) )                 #US teaspoon
 units.append( NormalUnit( "tablespoon", "tbsp|tablespoons?", VOLUME, 0.01478676478125 ) )            #US tablespoon
@@ -548,18 +576,6 @@ units.append( NormalUnit( "degrees rankine", "((°|º|deg(ree)?s?) ?)?(ra?(nkine
 
 #Pressure
 units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.0680459639098777333996809617108008 ) ) #Pounds per square inch
-
-#Mass
-units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                          #grains
-units.append( NormalUnit( "pennyweight", "penny ?weights?|dwt", MASS, 1.55517384 ) )        #pennywheight
-units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                       #drams
-units.append( NormalUnit( "ounce", "ounces?|(oz(?! t))", MASS, 28.349523125 ) )             #ounces
-units.append( NormalUnit( "troy ounce", "troy ?ounces?|oz t", MASS, 31.1034768 ) )          #troy ounces
-units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )              #troy pound
-units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                      #pounds
-units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.29318 ) )                 #stones
-units.append( NormalUnit( "slug", "slugs?", MASS, 14593.90293720636482939632545931759 ) )   #slug
-units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802.34544 ) )     #hundredweights
 
 #Distance
 units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                                   #thou

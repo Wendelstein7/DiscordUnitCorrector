@@ -127,11 +127,11 @@ class TestUnitCorrection(unittest.TestCase):
                 "I'm 4'5, my sister is 3'2, and my mom is 4'3. Wow, we're short!",
                 "I'm 1.3m, my sister is 0.97m, and my mom is 1.3m. Wow, we're short!"
             ],
-            # [
-            #     "My body has a volume of 16 gallons 48 ounces and weighs 134 pounds 13 ounces.",
-            #     "My body has a volume of 62.0 L and weighs 61.15 kg."
-            # ],
-            # ["16 gallons,  48. ounces", "61.99 L"], # add in special case of ounces meaning fluid ounces when immediately prior to a volume measurement
+            [
+                "My body has a volume of 16 gallons 48 ounces and weighs 134 pounds 13 ounces.",
+                "My body has a volume of 62.0 L and weighs 61.15 kg."
+            ],
+            ["16 gallons,  48. ounces", "61.99 L"],
             ["I'm 5.2  feet and  6 inches  tall.", "I'm 1.7 m  tall."],
             ["I'm 5.2feet and  6  inches  tall.", "I'm 1.7 m  tall."],
             ["I'm  5.2    feet and  6   inches  tall.", "I'm  1.7   m  tall."],

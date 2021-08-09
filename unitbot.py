@@ -41,24 +41,27 @@ async def on_ready():
 async def on_message(message): # Catches send messages and corrects non-SI units if neccesary. Most of the code behind this is in 'unitconversion.py'.
     author = message.author
     if bot.user.id is not author.id and author.bot is False:
-        user_roles = None
-        bot_roles = None
+        # variables that hold settings and message data
         processedMessage = unitconversion.process(message.content)
         polite = False
-        if isinstance(message.channel, TextChannel):
-            for member in message.channel.members:
-                if (member.id == author.id):
-                    user_roles = member.roles
-                if (member.id == bot.user.id):
-                    bot_roles = member.roles
-            for role in user_roles:
-                if str(role) == 'imperial certified':
-                    processedMessage = None
-                if str(role) == 'politeconversions':
-                    polite = True
+        # check bot roles for settings
+        guild = (await bot.get_context(message)).guild
+        if guild is not None:
+            bot_roles = guild.get_member(bot.user.id).roles
             for role in bot_roles:
-                if str(role) == 'politeconversions' or str(role) == 'polite':
+                if (str(role) == "polite") or (str(role) == "politeconversions"):
                     polite = True
+                    break
+        # check user roles for settings
+        author = message.author
+        if isinstance(author, Member):
+            user_roles = author.roles
+            for role in user_roles:
+                if (str(role) == "politeconversions"):
+                    polite = True
+                if (str(role) == "imperial certified"):
+                    processedMessage = None
+        # handle settings and message data
         if processedMessage is not None:
             name = (message.author.display_name if message.guild is not None else "you")
             if polite:

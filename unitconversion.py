@@ -4,16 +4,16 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-from math import cos, log10, pi, sin, sqrt
+from math import log10, sin, sqrt
 import re
 from abc import abstractmethod
 from sigfigs import SigFigCompliantNumber
 
-SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
-                            # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
-USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
-ASSUME_DECIMAL_INCHES = True# Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
-                            # values like 5'4 be implicitaly assumed to have inch measurements?
+SIGFIG_COMPLIANCE_LEVEL = 500   # Option: How hard should the bot try to follow sig figs, at the expense of readability?
+                                # Value is an int from 0 to 1000, where largest is most copmliant and least readable. DEFAULT: 500
+USE_TENPOW = False              # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
+ASSUME_DECIMAL_INCHES = True    # Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
+                                # values like 5'4 be implicitaly assumed to have inch measurements?
 
 EMPTY_RGX = re.compile("\A\b\Z^$")
 ALL_DASHES_RGX_STR = "(-|‐|‑|–|‒|−|﹘|﹘|﹘)"
@@ -84,7 +84,7 @@ class UnitType:
 
     def getStringFromMultiple(self, value, multiple, spacing):
         numstr = str(value / multiple)
-        if (SIGFIG_COMPLIANCE_LEVEL == 0):
+        if (SIGFIG_COMPLIANCE_LEVEL <= 200):
             if (numstr[len(numstr)-1] == '.'):
                 numstr = numstr[0:-1]
             if ("e" in numstr):
@@ -134,7 +134,7 @@ class Unit:
     def toMetric( self, value, spacing ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
         if SIValue == 0:
-            if (SIGFIG_COMPLIANCE_LEVEL == 2):
+            if (SIGFIG_COMPLIANCE_LEVEL >= 900):
                 numstr = str(SIValue)
                 if USE_TENPOW:
                     numstr = numstr.replace("e+", "*10^")
@@ -342,6 +342,11 @@ def listOfItemsTiedForMostCommon(inputlist):
     return (most, partition1, partition2)
 
 def toLowestTerms(a, b):
+    negative = False
+    if ((a<0) ^ (b<0)):
+        negative = True
+    a = abs(a)
+    b = abs(b)
     if a == 0:
         return (0, 1)
     if (b/a == int(b/a)):
@@ -353,7 +358,7 @@ def toLowestTerms(a, b):
             b /= x
         else:
             x += 1
-    return (a, b)
+    return (-a if negative else a, b)
 
 def combineSuperAndSubunits(superunitval, subunitval, ratio, subunithasdot = False):
     if (subunitval > ratio or subunitval.leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
@@ -393,7 +398,6 @@ class NormalUnit( Unit ):
             if value is None:
                 continue
             (preunitstr, usernumber, spacings, conversionFormula) = value
-            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings))
             end = find.end()
             # here lies one of the extremely special cases
             if (self._friendlyName == "foot"):
@@ -423,7 +427,17 @@ class NormalUnit( Unit ):
                                 terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(a))
                                 end = end2 if not terminatingradix else end2-1
                                 usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio, terminatingradix) / ratio
-                                metricValue = self.toMetric(usernumber, compromiseBetweenStrings(spacings))
+            if (SIGFIG_COMPLIANCE_LEVEL <= 600):
+                # special sig fig cases that assume what people mean by colloquial measurements rather than strictly using what they say
+                if (self._friendlyName == "inch"):
+                    if (usernumber / (10**int(log10(usernumber.value))) > 10 / 2.54):
+                        usernumber.leastSignificantDigit += 1
+                        usernumber.numSigFigs += 1
+                if (self._friendlyName == "foot"):
+                    if (usernumber / (10**int(log10(usernumber.value))) > 10 / 3.048):
+                        usernumber.leastSignificantDigit += 1
+                        usernumber.numSigFigs += 1
+            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings))
             repl = {}
             repl[ "start" ] = len(preunitstr)
             repl[ "text"  ] = metricValue

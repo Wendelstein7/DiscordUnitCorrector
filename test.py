@@ -4,7 +4,6 @@
 # To start unit tests run:
 # python test.py -v
 
-from sigfigs import SigFigCompliantNumber
 import unittest
 from argparse import ArgumentParser
 
@@ -26,8 +25,8 @@ if message:
 class TestUnitCorrection(unittest.TestCase):
     def test_base_unit_conversion(self):
         unit_pairs = [
-            ["10 feet", "3 m"],
-            ["10feet", "3m"],
+            ["10 feet", "300 cm"],
+            ["10feet", "300cm"],
         ]
 
         for pair in unit_pairs:
@@ -97,7 +96,7 @@ class TestUnitCorrection(unittest.TestCase):
             ["1.2345678901234 inches", "3.1358024409134 cm"],
             ["62. miles", "1.0e+2 km"],
             ["62.2 miles", "100. km"],
-            ["6234 inches", "158.3 m"],
+            ["6234 inches", "158.34 m"],
             ["0.0 degrees freedom", "-17.8 °C"],
             ["32.0 degrees freedom", "0 °C"]
         ]
@@ -110,37 +109,37 @@ class TestUnitCorrection(unittest.TestCase):
     
     def test_subunit_detection(self):
         unit_pairs = [
-            ["10 feet and 4 inches", "3.15 m"],
+            ["10 feet and 4 inches", "315 cm"],
             ["6 pounds, 2.1 ounces", "2.78 kg"],
             ["6  pounds  4.50  ounces", "2.8491  kg"],
-            ["6.0 feet and 170 pounds", "1.8 m and 77 kg"],
-            ["4'2", "1.3m"],
-            ["5  foot  2", "1.6  m"],
+            ["6.0 feet and 170 pounds", "183 cm and 77 kg"],
+            ["4'2", "127cm"],
+            ["5  foot  2", "157  cm"],
             ["100'11\"", "30.76m"],
-            ["4 foot 20 inches", "2 m"],
+            ["4 foot 20 inches", "170 cm"],
             ["5 oz t, 19 dwt and 20 grains", "186.4 g"],
             ["2 gallons 30 fluid ounces", "8.46 L"],
-            ["I'm 4'5 and 20 pounds.", "I'm 1.3m and 9 kg."],
-            ["I'm 4 foot 5 inches", "I'm 1.3 m"],
-            ["I'm 4 foot 9 pounds", "I'm 1 m 4 kg"],
+            ["I'm 4'5 and 20 pounds.", "I'm 135cm and 9 kg."],
+            ["I'm 4 foot 5 inches", "I'm 135 cm"],
+            ["I'm 4 foot 9 pounds", "I'm 120 cm 4 kg"],
             [
                 "I'm 4'5, my sister is 3'2, and my mom is 4'3. Wow, we're short!",
-                "I'm 1.3m, my sister is 0.97m, and my mom is 1.3m. Wow, we're short!"
+                "I'm 135cm, my sister is 97cm, and my mom is 130.cm. Wow, we're short!"
             ],
             [
                 "My body has a volume of 16 gallons 48 ounces and weighs 134 pounds 13 ounces.",
                 "My body has a volume of 62.0 L and weighs 61.15 kg."
             ],
             ["16 gallons,  48. ounces", "61.99 L"],
-            ["I'm 5.2  feet and  6 inches  tall.", "I'm 1.7 m  tall."],
-            ["I'm 5.2feet and  6  inches  tall.", "I'm 1.7 m  tall."],
-            ["I'm  5.2    feet and  6   inches  tall.", "I'm  1.7   m  tall."],
-            ["3-foot-8-inch-long potato", "1.1-m-long potato"],
-            ["3 foot -8 inch long potato", "0.71 m long potato"],
-            ["3-foot--8-inch-long potato", "0.71-m-long potato"],
-            ["3-   foot 8- inch long potato", "1.1-  m long potato"],
-            ["3-  foot 8- inch long potato", "1.1- m long potato"],
-            ["3foot,8inch long potato", "1.1m long potato"]
+            ["I'm 5.2  feet and  6 inches  tall.", "I'm 174 cm  tall."],
+            ["I'm 5.2feet and  6  inches  tall.", "I'm 174 cm  tall."],
+            ["I'm  5.2    feet and  6   inches  tall.", "I'm  174   cm  tall."],
+            ["3-foot-8-inch-long potato", "112-cm-long potato"],
+            ["3 foot -8 inch long potato", "71 cm long potato"],
+            ["3-foot--8-inch-long potato", "71-cm-long potato"],
+            ["3-   foot 8- inch long potato", "112-  cm long potato"],
+            ["3-  foot 8- inch long potato", "112- cm long potato"],
+            ["3foot,8inch long potato", "112cm long potato"]
         ]
 
         for pair in unit_pairs:

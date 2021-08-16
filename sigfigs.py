@@ -1,142 +1,73 @@
-import re
-from math import isfinite, log10, floor
-from typing import SupportsAbs
-
-def numSigFigs(string):
-    lzs = 1 if string[0] == "-" else 0
-    preexponential = re.compile("[\s\S]*(?=(e))").search(string)
-    string = preexponential.group() if preexponential else string
-    while((string[lzs] == ".") | (string[lzs] == "0")):
-        lzs += 1
-        if (lzs == len(string)):
-            return 0
-    if ("." in string):
-        if (string.index(".") >= lzs):
-            return len(string) - lzs - 1
-        if (string.index(".") >= 0):
-            return len(string) - lzs
-        return None
-    tzs = len(string) - 1
-    while(string[tzs] == "0"):
-        tzs -= 1
-    return tzs - lzs + 1
-
-# precondition: string is a full-form int, not terminated with a radix
-def scientificnotation(string, sigfigs):
-    i=1
-    j=0
-    if string[0] == "-" :
-        sigfigs += 1
-        i += 1
-        j += 1
-        out = string[0:2] + "."
-    else:
-        out = string[0]+"."
-    while(i<sigfigs):
-        out += string[i]
-        i += 1
-    return out + "e+" + str(len(string)-1-j)
-
-def roundsignificant(number, sigfigs):
-    if number == 0 or sigfigs == 0:
-        return "0"
-    scinot = False
-    digits = -int(floor(log10(abs(number))))+sigfigs-1
-    digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1
-    out = round(number, digits)
-    if (digits <= 0):
-        if ("e" in str(float(number))):
-            scinot = True
-        out = round(out)
-    out = str(out)
-    if (digits > 0):
-        addex = len(out)
-        if ("e" in out):
-            addex = out.index("e")
-        if (not "." in out and sigfigs > 1):
-            out = out[0:addex] + "." + out[addex:len(out)]
-            addex += 1
-        while (numSigFigs(out) < sigfigs):
-            out = out[0:addex] + "0" + out[addex:len(out)]
-        return out
-    bad = numSigFigs(out) != sigfigs
-    if (scinot or (bad and digits != 0)):
-        return scientificnotation(out, sigfigs)
-    if (bad and digits == 0):
-        return out + "."
-    return out
-
-def leastSigDigit(string):
-    postdecimal = re.compile("(?<=(\.))\d*").search(string)
-    if postdecimal:
-        pdlen = len(postdecimal.group())
-    else:
-        pdlen = 0
-    exponential = re.compile("(?<=(e)).+").search(string)
-    if exponential:
-        evalu = int(exponential.group())
-    else:
-        evalu = 0
-    return pdlen - evalu
-
+from math import isfinite, log10, floor, sqrt
+from typing import SupportsAbs, Union
+from numberparsing import ParserSupportsSigFigs
 
 class SigFigCompliantNumber(SupportsAbs):
 
-    def __init__(self, stringRepresentation, *, exact = False, sigfigs = None, leastsigdig = None):
+    def __init__(
+            self,
+            stringRepresentation : Union[str, float],
+            parser : ParserSupportsSigFigs,
+            *,
+            exact : bool = False,
+            sigfigs : int = None,
+            leastsigdig : int = None
+    ):
+        self._parser = parser
         if ((exact and sigfigs is not None) or (exact and leastsigdig is not None)):
             raise ValueError("Cannot specify sig figs / places on an exact number!")
-        self.value = float(stringRepresentation)
-        self.isNan = False
-        self.isZero = False
-        if (self.value == 0):
+        if isinstance(stringRepresentation, float):
+            self._value = stringRepresentation
+        else:
+            self._value = parser.parseNumber([stringRepresentation])
+        self._isNan = False
+        self._isZero = False
+        if (self._value == 0):
             if (sigfigs != None):
                 raise ValueError("Cannot specify sig figs on zero!")
-            self.isZero = True
+            self._isZero = True
             if exact:
-                self.leastSignificantDigit = MAX_SIG_FIGS
+                self._leastSignificantDigit = MAX_SIG_FIGS
                 return
             if (leastsigdig != None):
-                self.leastSignificantDigit = leastsigdig
+                self._leastSignificantDigit = leastsigdig
                 return
-            self.leastSignificantDigit = leastSigDigit(stringRepresentation)
+            self._leastSignificantDigit = leastSigDigit(stringRepresentation, parser)
             return
-        if (not isfinite(self.value)):
-            self.isNan = True
+        if (not isfinite(self._value)):
+            self._isNan = True
             return
         if exact:
-            self.numSigFigs = MAX_SIG_FIGS
-            self.leastSignificantDigit = -int(floor(log10(abs(self.value))))+MAX_SIG_FIGS-1
+            self._numSigFigs = MAX_SIG_FIGS
+            self._leastSignificantDigit = -int(floor(log10(abs(self._value))))+MAX_SIG_FIGS-1
             return
         if (sigfigs is None and leastsigdig is None):
-            self.numSigFigs = numSigFigs(stringRepresentation)
-            self.leastSignificantDigit = -int(floor(log10(abs(self.value))))+self.numSigFigs-1
+            self._numSigFigs = numSigFigs(stringRepresentation, parser)
+            self._leastSignificantDigit = -int(floor(log10(abs(self._value))))+self._numSigFigs-1
         if (sigfigs is not None):
-            self.numSigFigs = sigfigs
-            self.leastSignificantDigit = -int(floor(log10(abs(self.value))))+self.numSigFigs-1
+            self._numSigFigs = sigfigs
+            self._leastSignificantDigit = -int(floor(log10(abs(self._value))))+self._numSigFigs-1
         if (leastsigdig is not None):
-            self.leastSignificantDigit = leastsigdig
-            self.numSigFigs = self.leastSignificantDigit+1+int(floor(log10(abs(self.value))))
-        if (sigfigs is not None and sigfigs != self.numSigFigs):
+            self._leastSignificantDigit = leastsigdig
+            self._numSigFigs = self._leastSignificantDigit+1+int(floor(log10(abs(self._value))))
+        if (sigfigs is not None and sigfigs != self._numSigFigs):
             raise ValueError("Incongruity created!")
-        if (leastsigdig is not None and leastsigdig != self.leastSignificantDigit):
+        if (leastsigdig is not None and leastsigdig != self._leastSignificantDigit):
             raise ValueError("Incongruity created!")
     
-    # even if there's a limited precision on the number, take the internal exact value to have unlimited precision and return it
-    def getExactValue(self):
-        if (self.isZero):
-            return 0
-        if (self.isNan):
-            return float("nan")
-        return self.value
+    # assumes that this SigFigCompliantNumber was generated as part of a measurement on multiple scales
+    # then, it increases this measurement by an appropriate amount, using the same scale as before
+    # but with another measurement on a scale that is larger by an integer ratio added in
+    def addNumberOnLargerScale(self, largerNumber, ratio, fixToIntegerPrecision = False):
+        return combineSuperAndSubunits(largerNumber, self, ratio, fixToIntegerPrecision)
 
-    # this string output value can always be parsed by float()
-    # when supplied to the constructor it will always recreate the same sigfigcompliantnumber
+    # this string output value is based on the parser given to the sigfigcompliantnumber when it was constructed
     def __str__(self):
-        if (self.isZero):
-            return "0e" + str(-self.leastSignificantDigit)
-        if (self.isNan):
-            return "nan"
-        return roundsignificant(self.value, self.numSigFigs)
+        if (self._isZero):
+            return self._parser.createScientificString(0, -self._leastSignificantDigit)
+        if (self._isNan):
+            return self._parser.createStringFloat(float("nan"))
+        return roundsignificant(self._value, self._numSigFigs, self._parser)
 
     # all math operations should behave under effectively the same contract as the python float class
     # if a nonunary operation has a parameter that can be converted to a float rather than a sigfigcompliantnumber, it is converted and treated as exact
@@ -144,90 +75,209 @@ class SigFigCompliantNumber(SupportsAbs):
 
     def __add__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            if (self.isNan or other.isNan):
-                return SigFigCompliantNumber(self.value + other.value)
-            return SigFigCompliantNumber(self.value + other.value, leastsigdig=min(self.leastSignificantDigit, other.leastSignificantDigit))
+            if (self._isNan or other._isNan):
+                return SigFigCompliantNumber(self._value + other._value)
+            return SigFigCompliantNumber(self._value + other._value, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
         else:
             return self + SigFigCompliantNumber(other, exact=True)
     
     def __sub__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            if (self.isNan or other.isNan):
-                return SigFigCompliantNumber(self.value - other.value)
-            return SigFigCompliantNumber(self.value - other.value, leastsigdig=min(self.leastSignificantDigit, other.leastSignificantDigit))
+            if (self._isNan or other._isNan):
+                return SigFigCompliantNumber(self._value - other._value)
+            return SigFigCompliantNumber(self._value - other._value, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
         else:
             return self - SigFigCompliantNumber(other, exact=True)
     
     def __mul__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            if (self.isNan or other.isNan):
-                return SigFigCompliantNumber(self.value * other.value)
-            if (self.isZero):
-                outLeastSigDigit = self.leastSignificantDigit
-                outLeastSigDigit -= int(round(log10(other.value)))
+            if (self._isNan or other._isNan):
+                return SigFigCompliantNumber(self._value * other._value)
+            if (self._isZero):
+                outLeastSigDigit = self._leastSignificantDigit
+                outLeastSigDigit -= int(round(log10(other._value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
-            if (other.isZero):
-                outLeastSigDigit = other.leastSignificantDigit
-                outLeastSigDigit -= int(round(log10(self.value)))
+            if (other._isZero):
+                outLeastSigDigit = other._leastSignificantDigit
+                outLeastSigDigit -= int(round(log10(self._value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
-            return SigFigCompliantNumber(self.value * other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
+            return SigFigCompliantNumber(self._value * other._value, sigfigs=min(self._numSigFigs, other._numSigFigs))
         else:
             return self * SigFigCompliantNumber(other, exact=True)
     
     def __truediv__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            if (other.isZero):
+            if (other._isZero):
                 raise ZeroDivisionError("SigFigCompliantNumber division by zero")
-            if (self.isNan or other.isNan):
-                return SigFigCompliantNumber(self.value + other.value)
-            if (self.isZero):
-                outLeastSigDigit = self.leastSignificantDigit
-                outLeastSigDigit += int(round(log10(other.value)))
+            if (self._isNan or other._isNan):
+                return SigFigCompliantNumber(self._value + other._value)
+            if (self._isZero):
+                outLeastSigDigit = self._leastSignificantDigit
+                outLeastSigDigit += int(round(log10(other._value)))
                 return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
-            return SigFigCompliantNumber(self.value / other.value, sigfigs=min(self.numSigFigs, other.numSigFigs))
+            return SigFigCompliantNumber(self._value / other._value, sigfigs=min(self._numSigFigs, other._numSigFigs))
         else:
             return self / SigFigCompliantNumber(other, exact=True)
     
     def __lt__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value < other.value
+            return self._value < other._value
         else:
             return self < SigFigCompliantNumber(other, exact=True)
     
     def __le__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value <= other.value
+            return self._value <= other._value
         else:
             return self <= SigFigCompliantNumber(other, exact=True)
     
     def __ne__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value != other.value
+            return self._value != other._value
         else:
             return self != SigFigCompliantNumber(other, exact=True)
     
     def __eq__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value == other.value
+            return self._value == other._value
         else:
             return self == SigFigCompliantNumber(other, exact=True)
     
     def __gt__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value > other.value
+            return self._value > other._value
         else:
             return self > SigFigCompliantNumber(other, exact=True)
     
     def __ge__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
-            return self.value >= other.value
+            return self._value >= other._value
         else:
             return self >= SigFigCompliantNumber(other, exact=True)
     
     def __abs__(self):
-        if (self.value >= 0):
+        if (self._value >= 0):
             return self
         else:
-            return SigFigCompliantNumber(-self.value, sigfigs=self.numSigFigs, leastsigdig=self.leastSignificantDigit)
+            return SigFigCompliantNumber(-self._value, sigfigs=self._numSigFigs, leastsigdig=self._leastSignificantDigit)
 
 MAX_SIG_FIGS = 1024
+
+def combineSuperAndSubunits(superunitval : SigFigCompliantNumber, subunitval : SigFigCompliantNumber, ratio : int, subunithasdot : bool = False):
+    if (subunitval > ratio or subunitval._leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
+        subunitval += (superunitval * ratio).getExactValue()
+        superunitoverprecision = (superunitval * ratio)._leastSignificantDigit - subunitval._leastSignificantDigit
+        if (superunitoverprecision > 0):
+            subunitval._numSigFigs += superunitoverprecision
+            subunitval._leastSignificantDigit += superunitoverprecision
+    else:
+        (_, denom) = toLowestTerms(subunitval.getExactValue(), ratio)
+        mindec = int(log10(5*denom))
+        superunitval += subunitval / ratio
+        superunitunderprecision = mindec - superunitval._leastSignificantDigit
+        if (superunitunderprecision > 0):
+            superunitval._numSigFigs += superunitunderprecision
+            superunitval._leastSignificantDigit += superunitunderprecision
+        subunitval = superunitval * ratio
+    return subunitval
+
+def numSigFigs(string : str, parser : ParserSupportsSigFigs):
+    lzs = 0
+    (_, string) = parser.getPositive(string)
+    exp = parser.getScinotRegex().search(string)
+    if exp is not None:
+        string = string[:exp.start()]
+    radixMatch = parser.getRadixRegex().search(string)
+    rmlength = 0 if radixMatch is None else len(radixMatch.group())
+    while((string[lzs] == parser.createValuelessDigit()) or (radixMatch is not None and (radixMatch.start() >= lzs and radixMatch.end() < lzs))):
+        lzs += 1
+        if (lzs == len(string)):
+            return 0
+    if (radixMatch is not None):
+        if (radixMatch.start() >= lzs):
+            return len(string) - lzs - rmlength
+        if (radixMatch.start() >= 0):
+            return len(string) - lzs
+        return None
+    tzs = len(string) - 1
+    while(string[tzs] == parser.createValuelessDigit()):
+        tzs -= 1
+    return tzs - lzs + 1
+
+# precondition: string is a full-form int, not terminated with a radix
+def scientificnotation(string : str, sigfigs : int, parser : ParserSupportsSigFigs):
+    i=1
+    j=0
+    (ispos, abs_) = parser.getPositive(string)
+    if ispos:
+        sigfigs += 1
+        i += 1
+        j += 1
+        out = abs_[0] + parser.createRadix()
+    else:
+        out = string[0] + parser.createRadix()
+    while(i<sigfigs):
+        out += string[i]
+        i += 1
+    return parser.createScientificString(out, str(len(string)-1-j))
+
+# precondition: number is not zero
+def roundsignificant(number : float, sigfigs : int, parser : ParserSupportsSigFigs):
+    if sigfigs == 0:
+        return parser.createStringInt(0)
+    scinot = False
+    digits = -int(floor(log10(abs(number))))+sigfigs-1
+    digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1
+    out = round(number, digits)
+    if (digits <= 0):
+        if (parser.isScientificString(str(float(number)))):
+            scinot = True
+        out = round(out)
+    out = str(out)
+    if (digits > 0):
+        addex = len(out)
+        scinotmatch = parser.getScinotRegex().search(out)
+        if (scinotmatch is not None):
+            addex = scinotmatch.start()
+        if ((parser.getRadixRegex().search(out) is not None) and sigfigs > 1):
+            out = out[0:addex] + parser.createRadix() + out[addex:len(out)]
+            addex += 1
+        while (numSigFigs(out, parser) < sigfigs):
+            out = out[0:addex] + parser.createValuelessDigit() + out[addex:len(out)]
+        return out
+    bad = numSigFigs(out, parser) != sigfigs
+    if (scinot or (bad and digits != 0)):
+        return scientificnotation(out, sigfigs, parser)
+    if (bad and digits == 0):
+        return out + parser.createRadix()
+    return out
+
+def leastSigDigit(string : str, parser : ParserSupportsSigFigs):
+    postdecimal = parser.getRadixRegex().search(string)
+    pdlen = 0
+    if postdecimal is not None:
+        pdlen = len(string) - postdecimal.start()
+    exponential = parser.getScinotRegex().search(string)
+    evalu = 0
+    if exponential is not None:
+        evalu = int(string[exponential.end():])
+    return pdlen - evalu
+
+def toLowestTerms(a, b):
+    negative = False
+    if ((a<0) ^ (b<0)):
+        negative = True
+    a = abs(a)
+    b = abs(b)
+    if a == 0:
+        return (0, 1)
+    if (b/a == int(b/a)):
+        return (1, int(b/a))
+    x = 2
+    while (x <= sqrt(a) and x <= sqrt(b)):
+        if (a%x==0 and b%x==0):
+            a /= x
+            b /= x
+        else:
+            x += 1
+    return (-a if negative else a, b)

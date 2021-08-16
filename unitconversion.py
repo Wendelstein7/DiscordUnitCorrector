@@ -4,7 +4,9 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-from math import log10, sin, sqrt
+from compiledregexes import *
+from numberparsing import NUMBER_PARSERS, ParserSupportsSigFigs
+from math import log10, sin
 import re
 from abc import abstractmethod
 from sigfigs import SigFigCompliantNumber
@@ -14,57 +16,6 @@ SIGFIG_COMPLIANCE_LEVEL = 500   # Option: How hard should the bot try to follow 
 USE_TENPOW = False              # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
 ASSUME_DECIMAL_INCHES = True    # Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
                                 # values like 5'4 be implicitaly assumed to have inch measurements?
-
-EMPTY_RGX = re.compile("\A\b\Z^$")
-ALL_DASHES_RGX_STR = "(-|‐|‑|–|‒|−|﹘|﹘|﹘)"
-ALL_PRIMES_ARR = ["'", "‘", "’", "`", "′", "´"]
-ALL_PRIMES_RGX_STR = "("
-for prime in ALL_PRIMES_ARR:
-    ALL_PRIMES_RGX_STR += re.escape(prime) + "|"
-ALL_PRIMES_RGX_STR = ALL_PRIMES_RGX_STR[:-1]
-ALL_PRIMES_RGX_STR += ")"
-PLACE_VALUE_SEPARATOR_RGX_STRS = ["\\.", "\\s", "٬", ",", ALL_PRIMES_RGX_STR, "_"]
-RADIX_RGX_STRS = ["٫", "\\.", "⎖", ","]
-def radixAndPvsepOverlap(radixrgx, pvseprgx):
-    return (radixrgx == pvseprgx)
-    # note that if RADIX_RGX_STRS or PLACE_VALUE_SEPARATOR_RGX_STRS changes,
-    # then this implementation may also need to change
-NUMBER_RGX_STRS = [(ALL_DASHES_RGX_STR+"?(\\d+)", EMPTY_RGX, EMPTY_RGX)]
-for radix in RADIX_RGX_STRS:
-    NUMBER_RGX_STRS.append((
-        ALL_DASHES_RGX_STR+"?((\\d+"+radix+"\\d*)|(\\d*"+radix+"\\d+))",
-        EMPTY_RGX,
-        re.compile(radix)
-    ))
-for radix in RADIX_RGX_STRS:
-    for pvsep in PLACE_VALUE_SEPARATOR_RGX_STRS:
-        if (radix == pvsep):
-            continue
-        preradix = "\\d+"
-        if radixAndPvsepOverlap(radix, pvsep):
-            preradix = ""
-        NUMBER_RGX_STRS.append((
-            ALL_DASHES_RGX_STR+"?(("+preradix+radix+"(\\d{2,}"+pvsep+")+\\d+)|(\\d+"+radix+"(\\d{2,}"+pvsep+"){2,}\\d+))",
-            re.compile(pvsep),
-            re.compile(radix)
-        ))
-        NUMBER_RGX_STRS.append((
-            ALL_DASHES_RGX_STR+"?(\\d+)("+pvsep+"\\d{2,})+("+radix+"((\\d{2,}"+pvsep+")*\\d+|\\d*))?",
-            re.compile(pvsep),
-            re.compile(radix)
-        ))
-NUMBER_UNIT_SPACERS_END_RGX = re.compile("(\\s|"+ALL_DASHES_RGX_STR+")*$")
-NUMBER_UNIT_SPACERS_START_RGX = re.compile("^(\\s|"+ALL_DASHES_RGX_STR+")*")
-END_NUMBER_RGXS = []
-START_NUMBER_RGXS = []
-for rgx in NUMBER_RGX_STRS:
-    END_NUMBER_RGXS.append((re.compile(rgx[0]+"$"), rgx[1], rgx[2]))
-    START_NUMBER_RGXS.append((re.compile("^"+rgx[0]), rgx[1], rgx[2]))
-SUPERUNIT_SUBUNIT_SPACER_END_RGX = re.compile("(\\s|,|and|\\+|"+ALL_DASHES_RGX_STR+")*$")
-SUPERUNIT_SUBUNIT_SPACER_START_RGX = re.compile("^(\\s|,|and|\\+|"+ALL_DASHES_RGX_STR+")*")
-REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
-END_SPACE_RGX = re.compile("\\s$")
-FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )")
 
 unitTypes = []
 
@@ -152,79 +103,79 @@ class Unit:
     @abstractmethod
     def convert( self, message ): pass
 
-def readNumFromStringEnd( string ):
-    bestrgx = None
-    bestlen = 0
-    for endnumrgx in END_NUMBER_RGXS:
-        disallowed = False
-        numberResult = endnumrgx[0].search(string)
-        if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
-            disallowed = True
-        if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
-            q = string[0:numberResult.start()]
-            q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
-            val = cleanNumber(numberResult.group().split(" ")[0], endnumrgx[1], endnumrgx[2])
-            if ((superunits_by_name_lookup["foot"]._regex.search(q) is not None) and (val <= 12)):
-                disallowed = True
-        if not disallowed:
-            bestrgx = endnumrgx
-            bestlen = len(numberResult.group())
-    if (bestrgx is not None):
-        numberResult = bestrgx[0].search(string)
-        return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
+# def readNumFromStringEnd( string ):
+#     bestrgx = None
+#     bestlen = 0
+#     for endnumrgx in END_NUMBER_RGXS:
+#         disallowed = False
+#         numberResult = endnumrgx[0].search(string)
+#         if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
+#             disallowed = True
+#         if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
+#             q = string[0:numberResult.start()]
+#             q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
+#             val = cleanNumber(numberResult.group().split(" ")[0], endnumrgx[1], endnumrgx[2])
+#             if ((superunits_by_name_lookup["foot"]._regex.search(q) is not None) and (val <= 12)):
+#                 disallowed = True
+#         if not disallowed:
+#             bestrgx = endnumrgx
+#             bestlen = len(numberResult.group())
+#     if (bestrgx is not None):
+#         numberResult = bestrgx[0].search(string)
+#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
 
-def readNumFromStringEndDisallowPrime( string ):
-    bestrgx = None
-    bestlen = 0
-    for endnumrgx in END_NUMBER_RGXS:
-        disallowed = False
-        for prime in ALL_PRIMES_ARR:
-            if ((endnumrgx[1].search(prime) is not None) or (endnumrgx[2].search(prime) is not None)):
-                disallowed = True
-                break
-        numberResult = endnumrgx[0].search(string)
-        if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
-            disallowed = True
-        if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
-            q = string[0:numberResult.start()]
-            q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
-            if superunits_by_name_lookup["foot"]._regex.search(q) is not None:
-                disallowed = True
-        if not disallowed:
-            bestrgx = endnumrgx
-            bestlen = len(numberResult.group())
-    if (bestrgx is not None):
-        numberResult = bestrgx[0].search(string)
-        return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
+# def readNumFromStringEndDisallowPrime( string ):
+#     bestrgx = None
+#     bestlen = 0
+#     for endnumrgx in END_NUMBER_RGXS:
+#         disallowed = False
+#         for prime in ALL_PRIMES_ARR:
+#             if ((endnumrgx[1].search(prime) is not None) or (endnumrgx[2].search(prime) is not None)):
+#                 disallowed = True
+#                 break
+#         numberResult = endnumrgx[0].search(string)
+#         if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
+#             disallowed = True
+#         if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
+#             q = string[0:numberResult.start()]
+#             q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
+#             if superunits_by_name_lookup["foot"]._regex.search(q) is not None:
+#                 disallowed = True
+#         if not disallowed:
+#             bestrgx = endnumrgx
+#             bestlen = len(numberResult.group())
+#     if (bestrgx is not None):
+#         numberResult = bestrgx[0].search(string)
+#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
 
-def readNumFromStringStartDisallowPrimeAndSpace( string ):
-    bestrgx = None
-    bestlen = 0
-    for startnumrgx in START_NUMBER_RGXS:
-        disallowed = False
-        for prime in ALL_PRIMES_ARR:
-            if ((startnumrgx[1].search(prime) is not None) or (startnumrgx[2].search(prime) is not None)):
-                disallowed = True
-                break
-            if ((startnumrgx[1].search(" ") is not None) or (startnumrgx[2].search(" ") is not None)):
-                disallowed = True
-                break
-        if (disallowed):
-            continue
-        numberResult = startnumrgx[0].search(string)
-        if numberResult is not None:
-            if (len(numberResult.group()) > bestlen):
-                bestrgx = startnumrgx
-                bestlen = len(numberResult.group())
-    if (bestrgx is not None):
-        numberResult = bestrgx[0].search(string)
-        return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[numberResult.end():])
+# def readNumFromStringStartDisallowPrimeAndSpace( string ):
+#     bestrgx = None
+#     bestlen = 0
+#     for startnumrgx in START_NUMBER_RGXS:
+#         disallowed = False
+#         for prime in ALL_PRIMES_ARR:
+#             if ((startnumrgx[1].search(prime) is not None) or (startnumrgx[2].search(prime) is not None)):
+#                 disallowed = True
+#                 break
+#             if ((startnumrgx[1].search(" ") is not None) or (startnumrgx[2].search(" ") is not None)):
+#                 disallowed = True
+#                 break
+#         if (disallowed):
+#             continue
+#         numberResult = startnumrgx[0].search(string)
+#         if numberResult is not None:
+#             if (len(numberResult.group()) > bestlen):
+#                 bestrgx = startnumrgx
+#                 bestlen = len(numberResult.group())
+#     if (bestrgx is not None):
+#         numberResult = bestrgx[0].search(string)
+#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[numberResult.end():])
 
-def cleanNumber(uncleanstring, pvsep, radix):
-    cleanedstring = uncleanstring.strip()
-    cleanedstring = pvsep.sub("", cleanedstring)
-    cleanedstring = radix.sub(".", cleanedstring)
-    return SigFigCompliantNumber(cleanedstring)
+# def cleanNumber(uncleanstring, pvsep, radix):
+#     cleanedstring = uncleanstring.strip()
+#     cleanedstring = pvsep.sub("", cleanedstring)
+#     cleanedstring = radix.sub(".", cleanedstring)
+#     return SigFigCompliantNumber(cleanedstring)
 
 def compromiseBetweenStrings( stringarr ):
     if directStringAverage(stringarr) is not None:
@@ -341,43 +292,6 @@ def listOfItemsTiedForMostCommon(inputlist):
             partition2 += occurences[key]
     return (most, partition1, partition2)
 
-def toLowestTerms(a, b):
-    negative = False
-    if ((a<0) ^ (b<0)):
-        negative = True
-    a = abs(a)
-    b = abs(b)
-    if a == 0:
-        return (0, 1)
-    if (b/a == int(b/a)):
-        return (1, int(b/a))
-    x = 2
-    while (x <= sqrt(a) and x <= sqrt(b)):
-        if (a%x==0 and b%x==0):
-            a /= x
-            b /= x
-        else:
-            x += 1
-    return (-a if negative else a, b)
-
-def combineSuperAndSubunits(superunitval, subunitval, ratio, subunithasdot = False):
-    if (subunitval > ratio or subunitval.leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
-        subunitval += (superunitval * ratio).getExactValue()
-        superunitoverprecision = (superunitval * ratio).leastSignificantDigit - subunitval.leastSignificantDigit
-        if (superunitoverprecision > 0):
-            subunitval.numSigFigs += superunitoverprecision
-            subunitval.leastSignificantDigit += superunitoverprecision
-    else:
-        (_, denom) = toLowestTerms(subunitval.getExactValue(), ratio)
-        mindec = int(log10(5*denom))
-        superunitval += subunitval / ratio
-        superunitunderprecision = mindec - superunitval.leastSignificantDigit
-        if (superunitunderprecision > 0):
-            superunitval.numSigFigs += superunitunderprecision
-            superunitval.leastSignificantDigit += superunitunderprecision
-        subunitval = superunitval * ratio
-    return subunitval
-
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
@@ -388,13 +302,13 @@ class NormalUnit( Unit ):
         else:
             self._key = key
 
-    def convert( self, message ):
+    def convert( self, message, locale : str ):
         originalText = message.getText()
         iterator = self._regex.finditer( originalText )
         replacements = []
         for find in iterator:
             preunitstr = originalText[ 0 : find.start() ]
-            value = self.getValueFromIteration(preunitstr, [])
+            value = self.getValueFromIteration(preunitstr, locale, [])
             if value is None:
                 continue
             (preunitstr, usernumber, spacings, conversionFormula) = value
@@ -402,12 +316,12 @@ class NormalUnit( Unit ):
             # here lies one of the extremely special cases
             if (self._friendlyName == "foot"):
                 end2 = SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(originalText[end:]).end() + end
-                potentialnum = readNumFromStringStartDisallowPrimeAndSpace(originalText[end2:])
+                potentialnum = NUMBER_PARSERS[locale].takeNumberFromStringStart(originalText[end2:], False)
                 if potentialnum is not None:
-                    ((a, b, c), remstr) = potentialnum
+                    (numstring, remstr) = potentialnum
                     spclen = NUMBER_UNIT_SPACERS_START_RGX.search(remstr).end()
                     remstr = remstr[spclen:]
-                    end2 += len(a)
+                    end2 += len(numstring)
                     belongstoother=False
                     for unit in units:
                         pmatch = unit._regex.search(remstr)
@@ -419,24 +333,24 @@ class NormalUnit( Unit ):
                             belongstoother = True
                             break
                     if not belongstoother:
-                        actualnum = cleanNumber(a, b, c)
+                        actualnum = SigFigCompliantNumber(numstring, NUMBER_PARSERS[locale])
                         if actualnum < 12 and actualnum >= 0:
-                            radixcheck = c.search(a)
-                            if (radixcheck is None) or (radixcheck.end() == len(a)) or ASSUME_DECIMAL_INCHES:
+                            radixcheck = NUMBER_PARSERS[locale].radixRegex.search(numstring)
+                            if (radixcheck is None) or (radixcheck.end() == len(numstring)) or ASSUME_DECIMAL_INCHES:
                                 ratio = 12
-                                terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(a))
+                                terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(numstring))
                                 end = end2 if not terminatingradix else end2-1
-                                usernumber = combineSuperAndSubunits(usernumber, actualnum, ratio, terminatingradix) / ratio
+                                usernumber = actualnum.addNumberOnLargerScale(usernumber, ratio, terminatingradix) / ratio
             if (SIGFIG_COMPLIANCE_LEVEL <= 600):
                 # special sig fig cases that assume what people mean by colloquial measurements rather than strictly using what they say
                 if (self._friendlyName == "inch"):
-                    if (usernumber / (10**int(log10(usernumber.value))) > 10 / 2.54):
-                        usernumber.leastSignificantDigit += 1
-                        usernumber.numSigFigs += 1
+                    if (usernumber / (10**int(log10(usernumber._value))) > 10 / 2.54):
+                        usernumber._leastSignificantDigit += 1
+                        usernumber._numSigFigs += 1
                 if (self._friendlyName == "foot"):
-                    if (usernumber / (10**int(log10(usernumber.value))) > 10 / 3.048):
-                        usernumber.leastSignificantDigit += 1
-                        usernumber.numSigFigs += 1
+                    if (usernumber / (10**int(log10(usernumber._value))) > 10 / 3.048):
+                        usernumber._leastSignificantDigit += 1
+                        usernumber._numSigFigs += 1
             metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings))
             repl = {}
             repl[ "start" ] = len(preunitstr)
@@ -452,22 +366,20 @@ class NormalUnit( Unit ):
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
     
-    def getValueFromIteration(self, string, spacings = []):
+    def getValueFromIteration(self, string, parser : ParserSupportsSigFigs, spacings = []):
         spacerRes = NUMBER_UNIT_SPACERS_END_RGX.search(string)
         if spacerRes is None:
             return None
         spacing = spacerRes.group()
         preunitstr = string[ 0 : spacerRes.start() ]
-        read = None
-        # here lies one of the extremely special cases
-        if (self._friendlyName == "foot" or self._friendlyName == "inch"):
-            read = readNumFromStringEndDisallowPrime(preunitstr)
-        else:
-            read = readNumFromStringEnd(preunitstr)
+        read = parser.takeNumberFromStringEnd(preunitstr)
         if read is None:
             return None
-        ((a, b, c), preunitstr) = read
-        usernumber = cleanNumber(a, b, c)
+        (nums, notnums) = read
+        if (len(nums) > 1 or len(notnums) > 1):
+            raise NotImplementedError("Noncontinguous numbers not supported!")
+        usernumber = SigFigCompliantNumber(nums[0], parser)
+        preunitstr = "" if len(notnums) == 0 else notnums[0]
         SPACER = SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(preunitstr)
         nextunitstr = preunitstr[0:SPACER.start()]
         match = None
@@ -478,12 +390,12 @@ class NormalUnit( Unit ):
             value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], spacings)
             if value is None:
                 continue
-            if ((a.startswith(",") or usernumber < 0) and (SPACER.span()[1] == SPACER.span()[0])):
-                a = a[1:]
-                usernumber = cleanNumber(a, b, c)
+            if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (SPACER.span()[1] == SPACER.span()[0])):
+                nums[0] = nums[0][1:]
+                usernumber = parser.parseNumber(nums)
             (preunitstr, supernumber, spacings, _) = value
             ratio = superunit[1]
-            usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio, c.search(a) is not None)
+            usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
             break
         conversionFormula = self.toMetric
         # here lies one of the extremely special cases
@@ -495,12 +407,12 @@ class NormalUnit( Unit ):
                 value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], spacings)
                 if value is None:
                     continue
-                if ((a.startswith(",") or usernumber < 0) and (SPACER.span()[1] == SPACER.span()[0])):
-                    a = a[1:]
-                    usernumber = cleanNumber(a, b, c)
+                if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (SPACER.span()[1] == SPACER.span()[0])):
+                    nums[0] = nums[0][1:]
+                    usernumber = parser.parseNumber(nums)
                 (preunitstr, supernumber, spacings, _) = value
                 ratio = superunit[1]
-                usernumber = combineSuperAndSubunits(supernumber, usernumber, ratio, c.search(a) is not None)
+                usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
                 conversionFormula = unit_by_name_lookup["fluid ounce"].toMetric
                 break
         spacings.insert(0, spacing)
@@ -655,16 +567,14 @@ for key in units:
                 potentialsuperunit
             )
         else:
-            print("Superuniting is not supported for " + type(potentialsuperunit) + "!")
-            print("Somebody must've added some code but not fully integrated it *shoves work at you*")
-            print("Or maybe somebody made a class that COULD subclass NormalUnit but just didn't for no reason.")
-            print("That would be nice, it means I just shoved less work at you.")
+            raise NotImplementedError("Superuniting is not supported for unit type " + type(potentialsuperunit) + "!")
     unit_by_name_lookup[key._friendlyName] = key
 
 #Processes a string, converting freedom units to science units.
-def process(message):
+def process(message, locales=["en_US"]):
     modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
     for u in units:
-        u.convert(modificableMessage)
+        for locale in locales:
+            u.convert(modificableMessage, locale)
     if modificableMessage.isModified():
         return modificableMessage.getText()

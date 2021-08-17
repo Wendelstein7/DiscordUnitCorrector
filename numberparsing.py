@@ -62,28 +62,32 @@ class NumberParser:
                 return (in_, out_)
         return ([], [string])
 
-class ParserSupportsSigFigs(NumberParser):
-    @abstractmethod
-    def createScientificString(self, base : Union[float, str], exponent : Union[int, str]) -> str: pass
-    @abstractmethod
-    def isScientificString(self, string : str) -> bool: pass
+class ParserSupportsPosNeg(NumberParser):
     @abstractmethod
     def getPositive(self, string : str) -> Tuple[bool, str]: pass
     @abstractmethod
     def setPositive(self, string : str, positive : bool) -> str: pass
+
+class ParserSupportsSciNotation(NumberParser):
     @abstractmethod
-    def getRadixRegex() -> re.Pattern: pass
+    def createScientificString(self, base : Union[float, str], exponent : Union[int, str]) -> str: pass
     @abstractmethod
-    def getDigitsRegex() -> re.Pattern: pass
+    def isScientificString(self, string : str) -> bool: pass
+
+class ParserSupportsSigFigs(ParserSupportsPosNeg, ParserSupportsSciNotation):
     @abstractmethod
-    def getScinotRegex() -> re.Pattern: pass
+    def getRadixRegex(self) -> re.Pattern: pass
     @abstractmethod
-    def createRadix() -> str: pass
+    def getDigitsRegex(self) -> re.Pattern: pass
     @abstractmethod
-    def createValuelessDigit() -> str: pass
+    def getScinotRegex(self) -> re.Pattern: pass
+    @abstractmethod
+    def createRadix(self) -> str: pass
+    @abstractmethod
+    def createValuelessDigit(self) -> str: pass
 
 # a number with place value separators and a radix, using the digits 0 to 9
-class NormalNumberParser(ParserSupportsSigFigs):
+class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
     def __init__(self, *, numberRgxStr, pvSepRgxStr, radixRgxStr, scinotRgxStr):
         self.startRegex = re.compile("^" + numberRgxStr + "(?=(\D|^))")
         self.endRegex = re.compile("(?<=(\D|^))" + numberRgxStr + "$")

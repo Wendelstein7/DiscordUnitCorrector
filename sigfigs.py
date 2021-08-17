@@ -29,9 +29,11 @@ class SigFigCompliantNumber(SupportsAbs):
             if exact:
                 self._leastSignificantDigit = MAX_SIG_FIGS
                 return
-            if (leastsigdig != None):
+            if (leastsigdig is not None):
                 self._leastSignificantDigit = leastsigdig
                 return
+            if not isinstance(stringRepresentation, str):
+                raise TypeError("Can only determine the number of significant digits from a string")
             self._leastSignificantDigit = leastSigDigit(stringRepresentation, parser)
             return
         if (not isfinite(self._value)):
@@ -42,6 +44,8 @@ class SigFigCompliantNumber(SupportsAbs):
             self._leastSignificantDigit = -int(floor(log10(abs(self._value))))+MAX_SIG_FIGS-1
             return
         if (sigfigs is None and leastsigdig is None):
+            if not isinstance(stringRepresentation, str):
+                raise TypeError("Can only determine the number of significant digits from a string")
             self._numSigFigs = numSigFigs(stringRepresentation, parser)
             self._leastSignificantDigit = -int(floor(log10(abs(self._value))))+self._numSigFigs-1
         if (sigfigs is not None):
@@ -165,13 +169,13 @@ MAX_SIG_FIGS = 1024
 
 def combineSuperAndSubunits(superunitval : SigFigCompliantNumber, subunitval : SigFigCompliantNumber, ratio : int, subunithasdot : bool = False):
     if (subunitval > ratio or subunitval._leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
-        subunitval += (superunitval * ratio).getExactValue()
+        subunitval += (superunitval * ratio)._value
         superunitoverprecision = (superunitval * ratio)._leastSignificantDigit - subunitval._leastSignificantDigit
         if (superunitoverprecision > 0):
             subunitval._numSigFigs += superunitoverprecision
             subunitval._leastSignificantDigit += superunitoverprecision
     else:
-        (_, denom) = toLowestTerms(subunitval.getExactValue(), ratio)
+        (_, denom) = toLowestTerms(subunitval._value, ratio)
         mindec = int(log10(5*denom))
         superunitval += subunitval / ratio
         superunitunderprecision = mindec - superunitval._leastSignificantDigit
@@ -228,12 +232,12 @@ def roundsignificant(number : float, sigfigs : int, parser : ParserSupportsSigFi
     scinot = False
     digits = -int(floor(log10(abs(number))))+sigfigs-1
     digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1
-    out = round(number, digits)
+    rounded = round(number, digits)
     if (digits <= 0):
         if (parser.isScientificString(str(float(number)))):
             scinot = True
-        out = round(out)
-    out = str(out)
+        rounded = round(rounded)
+    out = str(rounded)
     if (digits > 0):
         addex = len(out)
         scinotmatch = parser.getScinotRegex().search(out)

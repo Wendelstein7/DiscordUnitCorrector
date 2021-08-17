@@ -13,13 +13,12 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-import datetime
 import os
 import sys
 from datetime import datetime, date
 
-import discord
-from discord.ext import commands
+import discord # type: ignore
+from discord.ext import commands # type: ignore
 
 import unitconversion
 import unitpedialib

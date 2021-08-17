@@ -4,58 +4,75 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-from compiledregexes import *
-from numberparsing import NUMBER_PARSERS, ParserSupportsSigFigs
-from math import log10, sin
-import re
+from typing import Any, Callable, Dict, Optional, Tuple, Union, List
+from math import log10
 from abc import abstractmethod
+import re
+
+from compiledregexes import *
+from stringcompromise import compromiseBetweenStrings
+from modificablemessage import ModificableMessage
+from numberparsing import NUMBER_PARSERS, NumberParser, ParserSupportsSigFigs
 from sigfigs import SigFigCompliantNumber
 
 SIGFIG_COMPLIANCE_LEVEL = 500   # Option: How hard should the bot try to follow sig figs, at the expense of readability?
                                 # Value is an int from 0 to 1000, where largest is most copmliant and least readable. DEFAULT: 500
-USE_TENPOW = False              # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
 ASSUME_DECIMAL_INCHES = True    # Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
                                 # values like 5'4 be implicitaly assumed to have inch measurements?
-
-unitTypes = []
 
 class UnitType:
 
     def __init__( self ):
-        self._multiples = {}
-        self._cutoffs = {}
-        self._labelStrings = []
+        self._multiples = {} # type: Dict[float, str]
+        self._cutoffs = {} # type: Dict[float, float]
+        self._labelStrings = [] # type: List[str]
         unitTypes.append(self)
 
     def addMultiple( self, unit, multiple, cutoff = 0.5 ):
+        # type: (str, float, float) -> UnitType
         self._multiples[ multiple ] = unit
         self._cutoffs[ multiple ] = cutoff
         self._labelStrings.append(unit)
         return self
 
-    def getStringFromMultiple(self, value, multiple, spacing):
-        numstr = str(value / multiple)
-        if (SIGFIG_COMPLIANCE_LEVEL <= 200):
-            if (numstr[len(numstr)-1] == '.'):
-                numstr = numstr[0:-1]
-            if ("e" in numstr):
-                numstr = str(float(numstr))
-                if (not "e" in numstr and numstr.endswith(".0")):
-                    numstr = numstr[0:-2]
-        if (USE_TENPOW):
-            numstr = numstr.replace("e+", "*10^")
-            numstr = numstr.replace("e", "*10^")
+    def getStringFromMultiple( self, value, multiple, spacing, parser ):
+        # type: (Union[SigFigCompliantNumber, float], float, str, NumberParser) -> str
+        if (SIGFIG_COMPLIANCE_LEVEL <= 200 and isinstance(value, SigFigCompliantNumber)):
+            if not isinstance(parser, ParserSupportsSigFigs):
+                raise TypeError("SigFigCompliantNumbers should have parsers that are instances of ParserSupportsSigFigs")
+            numstr = str(value / multiple)
+            result = parser.getRadixRegex().search(numstr)
+            if (result is not None and result.end() == len(numstr)):
+                numstr = numstr[0:result.start()]
+            result = parser.getScinotRegex().search(numstr)
+            if (result is not None):
+                numstr = str(parser.parseNumber([numstr]))
+                if (parser.getScinotRegex().search(numstr) is None and parser.getRadixRegex().search(numstr) is not None):
+                    while numstr.endswith(parser.createValuelessDigit()):
+                        numstr = numstr[0:-len(parser.createValuelessDigit())]
+                    match = parser.getRadixRegex().finditer(numstr).__next__()
+                    if (match.end() == len(numstr)):
+                        numstr = numstr[0:match.start()]
+        else:
+            numstrs = parser.createStrings(value / multiple)
+            if (len(numstrs) != 1):
+                raise NotImplementedError("Not configured to handle noncontiguous numbers!")
+            numstr = numstrs[0]
         return numstr + spacing + self._multiples[multiple]
 
-    def getString( self, value, spacing ):
+    def getString( self, value, spacing, parser ):
+        # type: (Union[SigFigCompliantNumber, float], str, NumberParser) -> str
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
             if abs(value) > multiple * self._cutoffs[multiple]:
-                return self.getStringFromMultiple(value, multiple, spacing)
-        return self.getStringFromMultiple( value, sortedMultiples[-1], spacing )
-    
+                return self.getStringFromMultiple( value, multiple, spacing, parser )
+        return self.getStringFromMultiple( value, sortedMultiples[-1], spacing, parser )
+
     def getLabelStrings( self ):
+        # type: () -> List[str]
         return self._labelStrings
+
+unitTypes = [] # type: List[UnitType]
 
 DISTANCE = UnitType().addMultiple("m", 1, 3.5).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
@@ -70,239 +87,59 @@ PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
 POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 )
 
-LABEL_STRING_START_RGXS = []
+LABEL_STRING_START_RGXS = [] # type: List[re.Pattern]
 for unitType in unitTypes:
     for labelString in unitType.getLabelStrings():
         LABEL_STRING_START_RGXS.append(re.compile("^"+re.escape(labelString)+"($|[^a-zA-Z])"))
 
 class Unit:
     def __init__( self, friendlyName, unitType, toSIMultiplication, toSIAddition ):
-        self._friendlyName = friendlyName
-        self._unitType = unitType
-        self._toSIMultiplication = toSIMultiplication
-        self._toSIAddition = toSIAddition
+        # type: (str, UnitType, float, float) -> None
+        self._friendlyName = friendlyName # type: str
+        self._unitType = unitType # type: UnitType
+        self._toSIMultiplication = toSIMultiplication # type: float
+        self._toSIAddition = toSIAddition # type: float
 
-    def toMetric( self, value, spacing ):
+    def toMetric( self, value, spacing, parser ):
+        # type: (Union[float, SigFigCompliantNumber], str, NumberParser) -> str
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
         if SIValue == 0:
-            if (SIGFIG_COMPLIANCE_LEVEL >= 900):
-                numstr = str(SIValue)
-                if USE_TENPOW:
-                    numstr = numstr.replace("e+", "*10^")
-                    numstr = numstr.replace("e", "*10^")
-                return numstr + spacing + self._unitType._multiples[1]
-            return "0" + spacing + self._unitType._multiples[1]
-        return self._unitType.getString( SIValue, spacing )
+            if (SIGFIG_COMPLIANCE_LEVEL >= 900 and isinstance(SIValue, SigFigCompliantNumber)):
+                return str(SIValue) + spacing + self._unitType._multiples[1]
+            strs = parser.createStrings(0)
+            if (len(strs) > 1):
+                raise NotImplementedError("Does not yet support noncontiguous numbers!")
+            return strs[0] + spacing + self._unitType._multiples[1]
+        return self._unitType.getString( SIValue, spacing, parser )
 
     def getName( self ):
+        # type: () -> str
         return self._friendlyName
 
     def __str__(self):
         return self._friendlyName
 
     @abstractmethod
-    def convert( self, message ): pass
+    def convert( self, message, locale ):
+        # type: (ModificableMessage, NumberParser) -> None
+        pass
 
-# def readNumFromStringEnd( string ):
-#     bestrgx = None
-#     bestlen = 0
-#     for endnumrgx in END_NUMBER_RGXS:
-#         disallowed = False
-#         numberResult = endnumrgx[0].search(string)
-#         if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
-#             disallowed = True
-#         if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
-#             q = string[0:numberResult.start()]
-#             q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
-#             val = cleanNumber(numberResult.group().split(" ")[0], endnumrgx[1], endnumrgx[2])
-#             if ((superunits_by_name_lookup["foot"]._regex.search(q) is not None) and (val <= 12)):
-#                 disallowed = True
-#         if not disallowed:
-#             bestrgx = endnumrgx
-#             bestlen = len(numberResult.group())
-#     if (bestrgx is not None):
-#         numberResult = bestrgx[0].search(string)
-#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
-
-# def readNumFromStringEndDisallowPrime( string ):
-#     bestrgx = None
-#     bestlen = 0
-#     for endnumrgx in END_NUMBER_RGXS:
-#         disallowed = False
-#         for prime in ALL_PRIMES_ARR:
-#             if ((endnumrgx[1].search(prime) is not None) or (endnumrgx[2].search(prime) is not None)):
-#                 disallowed = True
-#                 break
-#         numberResult = endnumrgx[0].search(string)
-#         if ((numberResult is None) or (len(numberResult.group()) <= bestlen)):
-#             disallowed = True
-#         if ((not disallowed) and ((endnumrgx[1].search(" ") is not None) or (endnumrgx[2].search(" ") is not None))):
-#             q = string[0:numberResult.start()]
-#             q = q[0:SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(q).start()]
-#             if superunits_by_name_lookup["foot"]._regex.search(q) is not None:
-#                 disallowed = True
-#         if not disallowed:
-#             bestrgx = endnumrgx
-#             bestlen = len(numberResult.group())
-#     if (bestrgx is not None):
-#         numberResult = bestrgx[0].search(string)
-#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[0 : numberResult.start()])
-
-# def readNumFromStringStartDisallowPrimeAndSpace( string ):
-#     bestrgx = None
-#     bestlen = 0
-#     for startnumrgx in START_NUMBER_RGXS:
-#         disallowed = False
-#         for prime in ALL_PRIMES_ARR:
-#             if ((startnumrgx[1].search(prime) is not None) or (startnumrgx[2].search(prime) is not None)):
-#                 disallowed = True
-#                 break
-#             if ((startnumrgx[1].search(" ") is not None) or (startnumrgx[2].search(" ") is not None)):
-#                 disallowed = True
-#                 break
-#         if (disallowed):
-#             continue
-#         numberResult = startnumrgx[0].search(string)
-#         if numberResult is not None:
-#             if (len(numberResult.group()) > bestlen):
-#                 bestrgx = startnumrgx
-#                 bestlen = len(numberResult.group())
-#     if (bestrgx is not None):
-#         numberResult = bestrgx[0].search(string)
-#         return ((numberResult.group(), bestrgx[1], bestrgx[2]), string[numberResult.end():])
-
-# def cleanNumber(uncleanstring, pvsep, radix):
-#     cleanedstring = uncleanstring.strip()
-#     cleanedstring = pvsep.sub("", cleanedstring)
-#     cleanedstring = radix.sub(".", cleanedstring)
-#     return SigFigCompliantNumber(cleanedstring)
-
-def compromiseBetweenStrings( stringarr ):
-    if directStringAverage(stringarr) is not None:
-        return directStringAverage(stringarr)
-    best = listOfItemsTiedForMostCommon(stringarr)[0]
-    if (len(best) == 1):
-        return best[0]
-    stringarr = best
-    if directStringAverage(stringarr) is not None:
-        return directStringAverage(stringarr)
-    pfstrs = stringarr.copy()
-    prefix = ""
-    while True:
-        ati = []
-        atirev = {}
-        for i in range(len(pfstrs)):
-            if len(pfstrs[i]) > 0:
-                atirev[len(ati)] = i
-                ati.append(pfstrs[i][0])
-        if (len(ati) == 0):
-            return prefix
-        (cs, cuts, pops) = listOfItemsTiedForMostCommon(ati)
-        if (len(cs)!=1 or len(cuts)*2<=len(pfstrs)):
-            break
-        prefix = prefix + cs[0]
-        for pop in pops:
-            pfstrs.pop(pop)
-        for cut in cuts:
-            pfstrs[atirev[cut]] = pfstrs[atirev[cut]][1:]
-    postfix = ""
-    while True:
-        ati = []
-        atirev = {}
-        for i in range(len(pfstrs)):
-            if len(pfstrs[i]) > 0:
-                atirev[len(ati)] = i
-                ati.append(pfstrs[i][-1])
-        if (len(ati) == 0):
-            return prefix+postfix
-        (cs, cuts, pops) = listOfItemsTiedForMostCommon(ati)
-        if (len(cs)!=1 or len(cuts)*2<=len(pfstrs)):
-            break
-        postfix = cs[0] + postfix
-        for pop in pops:
-            pfstrs.pop(pop)
-        for cut in cuts:
-            pfstrs[cut] = pfstrs[cut][:-1]
-    if directStringAverage(pfstrs) is not None:
-        return prefix+directStringAverage(pfstrs, END_SPACE_RGX.search(prefix) is not None)+postfix
-    (options, _, _) = listOfItemsTiedForMostCommon(pfstrs)
-    if len(options) == 1:
-        return prefix+options[0]+postfix
-    if "" in options:
-        options.remove("")
-    # at this point, as a last resort
-    # the compromise will occur via a random-seeming, but deterministic selection from the options
-    FAKE_RANDOM_FACTOR = 54.7287857178
-    return options[int((len(options) + len(options) * sin(FAKE_RANDOM_FACTOR * len(options))) / 2)]
-
-def directStringAverage(pfstrs, biasdown=False):
-    charcount = 0
-    if (len("".join(pfstrs)) == 0):
-        return ""
-    char = "".join(pfstrs)[0]
-    uniform = True
-    spaces = True
-    for c in "".join(pfstrs):
-        charcount += 1
-        if not c.isspace():
-            spaces = False
-        if c != char:
-            uniform = False
-        if ((not uniform) and (not spaces)):
-            break
-    if uniform:
-        l = int(charcount / len(pfstrs))
-        l = 1 if (l == 0 and charcount > 0 and not biasdown) else l
-        return "".join(l * [char])
-    if spaces:
-        (charoptions, _, _) = listOfItemsTiedForMostCommon("".join(pfstrs))
-        l = int(charcount / len(pfstrs))
-        l = 1 if (l == 0 and charcount > 0) else l
-        if " " in charoptions:
-            return "".join(l * [" "])
-        else:
-            # at this point, as a last resort
-            # the compromise will occur by repating a random-seeming, but deterministic character selected from the options
-            FAKE_RANDOM_FACTOR = 61.091056745
-            c = charoptions[int((len(charoptions) + len(charoptions) * sin(FAKE_RANDOM_FACTOR * len(charoptions))) / 2)]
-            return "".join(l * [c])
-
-def listOfItemsTiedForMostCommon(inputlist):
-    occurences = {}
-    for i in range(len(inputlist)):
-        item = inputlist[i]
-        if item in occurences.keys():
-            occurences[item].append(i)
-        else:
-            occurences[item] = [i]
-    most = []
-    mv = 0
-    partition1 = []
-    partition2 = []
-    for key in occurences.keys():
-        if (len(occurences[key]) > mv):
-            mv = len(occurences[key])
-            most = [key]
-            partition2 += partition1
-            partition1 = occurences[key]
-        elif (len(occurences[key]) == mv):
-            most.append(key)
-            partition1 += occurences[key]
-        else:
-            partition2 += occurences[key]
-    return (most, partition1, partition2)
+class SupportsSuperunit(Unit):
+    # this class is a stub, because I'm not sure what to put here because there's not utilization of the generality it provides, yet
+    pass
 
 #NormalUnit class, that follow number + unit name.
-class NormalUnit( Unit ):
+class NormalUnit( SupportsSuperunit, Unit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, UnitType, float, float, SupportsSuperunit) -> None
         super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-z]))", re.IGNORECASE )
-        if key is None:
-            self._key = self
-        else:
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-z]))", re.IGNORECASE ) # type: re.Pattern
+        self._key = self # type: SupportsSuperunit
+        if key is not None:
             self._key = key
 
-    def convert( self, message, locale : str ):
+    def convert( self, message, locale ):
+        # type: (ModificableMessage, NumberParser) -> None
         originalText = message.getText()
         iterator = self._regex.finditer( originalText )
         replacements = []
@@ -315,33 +152,48 @@ class NormalUnit( Unit ):
             end = find.end()
             # here lies one of the extremely special cases
             if (self._friendlyName == "foot"):
-                end2 = SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(originalText[end:]).end() + end
-                potentialnum = NUMBER_PARSERS[locale].takeNumberFromStringStart(originalText[end2:], False)
-                if potentialnum is not None:
-                    (numstring, remstr) = potentialnum
-                    spclen = NUMBER_UNIT_SPACERS_START_RGX.search(remstr).end()
+                end2 = SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(originalText[end:]).__next__().end() + end
+                (numstrings, remstrs) = locale.takeNumberFromStringStart(originalText[end2:], False)
+                if len(numstrings) > 0:
+                    if (len(numstrings) > 1 or len(remstrs) > 1):
+                        raise NotImplementedError("Does not yet support noncontiguous numbers!")
+                    numstring = numstrings[0]
+                    remstr = remstrs[0]
+                    spclen = NUMBER_UNIT_SPACERS_START_RGX.finditer(remstr).__next__().end()
                     remstr = remstr[spclen:]
                     end2 += len(numstring)
                     belongstoother=False
                     for unit in units:
-                        pmatch = unit._regex.search(remstr)
-                        if ((pmatch is not None) and (pmatch.start() == 0)):
-                            belongstoother = True
-                            break
+                        if (isinstance(unit, NormalUnit)):
+                            pmatch = unit._regex.search(remstr)
+                            if ((pmatch is not None) and (pmatch.start() == 0)):
+                                belongstoother = True
+                                break
+                        else:
+                            raise NotImplementedError("Cannot ensure number is not explicitly part of unit " + str(unit) + " of type " + str(type(unit)) + "!")
                     for labelStringRgx in LABEL_STRING_START_RGXS:
                         if (labelStringRgx.search(remstr) is not None):
                             belongstoother = True
                             break
                     if not belongstoother:
-                        actualnum = SigFigCompliantNumber(numstring, NUMBER_PARSERS[locale])
-                        if actualnum < 12 and actualnum >= 0:
-                            radixcheck = NUMBER_PARSERS[locale].radixRegex.search(numstring)
-                            if (radixcheck is None) or (radixcheck.end() == len(numstring)) or ASSUME_DECIMAL_INCHES:
+                        if isinstance(locale, ParserSupportsSigFigs):
+                            actualnumSFcompli = SigFigCompliantNumber(numstring, locale)
+                            if actualnumSFcompli < 12 and actualnumSFcompli >= 0:
+                                radixcheck = locale.getRadixRegex().search(numstring)
+                                if (radixcheck is None) or (radixcheck.end() == len(numstring)) or ASSUME_DECIMAL_INCHES:
+                                    ratio = 12
+                                    terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(numstring))
+                                    end = end2 if not terminatingradix else end2-1
+                                    usernumber = actualnumSFcompli.addNumberOnLargerScale(usernumber, ratio, terminatingradix) / ratio
+                        else:
+                            actualnum = locale.parseNumber([numstring])
+                            if not isinstance(usernumber, float):
+                                raise RuntimeError("Inconsistent internal behavior!")
+                            if actualnum < 12 and actualnum >= 0:
                                 ratio = 12
-                                terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(numstring))
-                                end = end2 if not terminatingradix else end2-1
-                                usernumber = actualnum.addNumberOnLargerScale(usernumber, ratio, terminatingradix) / ratio
-            if (SIGFIG_COMPLIANCE_LEVEL <= 600):
+                                usernumber = actualnum / ratio + usernumber
+                                end = end2
+            if (SIGFIG_COMPLIANCE_LEVEL <= 600 and isinstance(usernumber, SigFigCompliantNumber)):
                 # special sig fig cases that assume what people mean by colloquial measurements rather than strictly using what they say
                 if (self._friendlyName == "inch"):
                     if (usernumber / (10**int(log10(usernumber._value))) > 10 / 2.54):
@@ -351,8 +203,8 @@ class NormalUnit( Unit ):
                     if (usernumber / (10**int(log10(usernumber._value))) > 10 / 3.048):
                         usernumber._leastSignificantDigit += 1
                         usernumber._numSigFigs += 1
-            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings))
-            repl = {}
+            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings), locale)
+            repl = {} # type: Dict[str, Any]
             repl[ "start" ] = len(preunitstr)
             repl[ "text"  ] = metricValue
             repl[ "end" ] = end
@@ -365,8 +217,14 @@ class NormalUnit( Unit ):
                 lastPoint = repl["end"]
             finalMessage += originalText[ lastPoint : ]
             message.setText(finalMessage)
-    
-    def getValueFromIteration(self, string, parser : ParserSupportsSigFigs, spacings = []):
+
+    def getValueFromIteration(
+                            self,
+                            string, # type: str
+                            parser, # type: NumberParser
+                            spacings = [] # type: List[str]
+                            ):
+        # type: (...) -> Optional[Tuple[str, Union[SigFigCompliantNumber, float], List[str], Callable[[Union[float, SigFigCompliantNumber], str, NumberParser], str]]]
         spacerRes = NUMBER_UNIT_SPACERS_END_RGX.search(string)
         if spacerRes is None:
             return None
@@ -378,75 +236,77 @@ class NormalUnit( Unit ):
         (nums, notnums) = read
         if (len(nums) > 1 or len(notnums) > 1):
             raise NotImplementedError("Noncontinguous numbers not supported!")
-        usernumber = SigFigCompliantNumber(nums[0], parser)
+        usernumber : Union[SigFigCompliantNumber, float] = 0
+        if isinstance(parser, ParserSupportsSigFigs):
+            usernumber = SigFigCompliantNumber(nums[0], parser)
+        else:
+            usernumber = parser.parseNumber(nums)
         preunitstr = "" if len(notnums) == 0 else notnums[0]
-        SPACER = SUPERUNIT_SUBUNIT_SPACER_END_RGX.search(preunitstr)
-        nextunitstr = preunitstr[0:SPACER.start()]
+        spacer = SUPERUNIT_SUBUNIT_SPACER_END_RGX.finditer(preunitstr).__next__()
+        nextunitstr = preunitstr[0:spacer.start()]
         match = None
         for superunit in superunits[self._key]:
-            match = superunit[0]._regex.search(nextunitstr)
-            if match is None:
-                continue
-            value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], spacings)
-            if value is None:
-                continue
-            if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (SPACER.span()[1] == SPACER.span()[0])):
-                nums[0] = nums[0][1:]
-                usernumber = parser.parseNumber(nums)
-            (preunitstr, supernumber, spacings, _) = value
-            ratio = superunit[1]
-            usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
-            break
-        conversionFormula = self.toMetric
-        # here lies one of the extremely special cases
-        if (match is None and self._friendlyName == "ounce"):
-            for superunit in superunits[unit_by_name_lookup["fluid ounce"]]:
+            if (isinstance(superunit[0], NormalUnit)):
                 match = superunit[0]._regex.search(nextunitstr)
                 if match is None:
                     continue
-                value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], spacings)
+                value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
                 if value is None:
                     continue
-                if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (SPACER.span()[1] == SPACER.span()[0])):
+                if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (spacer.span()[1] == spacer.span()[0])):
                     nums[0] = nums[0][1:]
                     usernumber = parser.parseNumber(nums)
                 (preunitstr, supernumber, spacings, _) = value
                 ratio = superunit[1]
-                usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
-                conversionFormula = unit_by_name_lookup["fluid ounce"].toMetric
+                if isinstance(usernumber, SigFigCompliantNumber):
+                    if not isinstance(parser, ParserSupportsSigFigs):
+                        raise RuntimeError("Inconsistent internal behavior!")
+                    usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
+                else:
+                    usernumber = usernumber + supernumber * ratio
                 break
+            else:
+                raise NotImplementedError("Superuniting is not supported for unit type " + str(type(potentialsuperunit)) + "!")
+        conversionFormula = self.toMetric
+        # here lies one of the extremely special cases
+        if (match is None and self._friendlyName == "ounce"):
+            for superunit in superunits[unit_by_name_lookup["fluid ounce"]]:
+                if (isinstance(superunit[0], NormalUnit)):
+                    match = superunit[0]._regex.search(nextunitstr)
+                    if match is None:
+                        continue
+                    value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
+                    if value is None:
+                        continue
+                    if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (spacer.span()[1] == spacer.span()[0])):
+                        nums[0] = nums[0][1:]
+                        usernumber = parser.parseNumber(nums)
+                    (preunitstr, supernumber, spacings, _) = value
+                    ratio = superunit[1]
+                    if isinstance(usernumber, SigFigCompliantNumber):
+                        if not isinstance(parser, ParserSupportsSigFigs):
+                            raise RuntimeError("Inconsistent internal behavior!")
+                        usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
+                    else:
+                        usernumber = usernumber + supernumber * ratio
+                    conversionFormula = unit_by_name_lookup["fluid ounce"].toMetric
+                    break
         spacings.insert(0, spacing)
         return (preunitstr, usernumber, spacings, conversionFormula)
 
 class CaseSensitiveNormalUnit( NormalUnit ):
     def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, UnitType, float, float, SupportsSuperunit) -> None
         super( CaseSensitiveNormalUnit, self ).__init__( friendlyName, "(placeholder)", unitType, toSIMultiplication, toSIAddition, key )
         self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))" )
 
 class RegexFlagsExposedNormalUnit( NormalUnit ):
     def __init__( self, friendlyName, regex, flags, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, int, UnitType, float, float, SupportsSuperunit) -> None
         super( RegexFlagsExposedNormalUnit, self ).__init__( friendlyName, "(placeholder)", unitType, toSIMultiplication, toSIAddition, key )
         self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))", flags )
 
-# Class containing a string, for the modificable message, and a boolean
-# to indicate if the message has been modified
-class ModificableMessage:
-
-    def __init__(self, text):
-        self._text = text
-        self._modified = False
-
-    def getText(self):
-        return self._text
-
-    def setText(self, text):
-        self._text = text
-        self._modified = True
-
-    def isModified(self):
-        return self._modified
-
-units = []
+units = [] # type: List[Unit]
 
 # every unit must be defined before its superunits, so unit definitions are sorted by size
 
@@ -527,9 +387,9 @@ units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER,
 # END UNIT DEFINITIONS
 # BEGIN SUPERUNIT DEFINITIONS
 
-superunits = {}
-superunits_by_name_lookup = {}
-unit_by_name_lookup = {}
+superunits = {} # type: Dict[Unit, List[Tuple[SupportsSuperunit, int]]]
+superunits_by_name_lookup = {} # type: Dict[str, SupportsSuperunit]
+unit_by_name_lookup = {} # type: Dict[str, Unit]
 for key in units:
     superunits[key] = []
     if (key._toSIAddition != 0):
@@ -567,14 +427,17 @@ for key in units:
                 potentialsuperunit
             )
         else:
-            raise NotImplementedError("Superuniting is not supported for unit type " + type(potentialsuperunit) + "!")
+            if isinstance(potentialsuperunit, SupportsSuperunit):
+                raise NotImplementedError("Superuniting is not supported for unit type " + str(type(potentialsuperunit)) + "!")
     unit_by_name_lookup[key._friendlyName] = key
 
 #Processes a string, converting freedom units to science units.
-def process(message, locales=["en_US"]):
+def process(message, locales = ["en_US"]):
+    # type: (str, List[str]) -> Optional[ModificableMessage]
     modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
     for u in units:
         for locale in locales:
-            u.convert(modificableMessage, locale)
+            u.convert(modificableMessage, NUMBER_PARSERS[locale])
     if modificableMessage.isModified():
         return modificableMessage.getText()
+    return None

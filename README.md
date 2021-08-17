@@ -62,6 +62,7 @@ IMPORTANT: We are using the `rewrite` branch of Discord.py, keep that in mind!
 * https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html
 * https://github.com/Rapptz/discord.py/tree/rewrite/examples
 * [The Discord.py Discord server](https://discordapp.com/invite/r3sSKJJ)
+To run this bot on Python2 or in versions of Python3 before 3.5, run `pip install typing` to compile.
 
 
 ## Memes

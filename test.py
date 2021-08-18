@@ -94,7 +94,7 @@ class TestUnitCorrection(unittest.TestCase):
         unit_pairs = [
             ["4.004 ft²", "3,720. cm²"],
             ["1.2345678901234 inches", "3.1358024409134 cm"],
-            ["62. miles", "1.0×10² km"], # todo make this work
+            ["62. miles", "1.0×10² km"],
             ["62.2 miles", "100. km"],
             ["6234 inches", "158.34 m"],
             ["0.0 degrees freedom", "−17.8 °C"],
@@ -107,7 +107,7 @@ class TestUnitCorrection(unittest.TestCase):
             result = unitconversion.process(raw_unit)
             self.assertEqual(result, expected_unit)
     
-    def test_subunit_detection(self): # todo make this work
+    def test_subunit_detection(self):
         unit_pairs = [
             ["10 feet and 4 inches", "315 cm"],
             ["6 pounds, 2.1 ounces", "2.78 kg"],

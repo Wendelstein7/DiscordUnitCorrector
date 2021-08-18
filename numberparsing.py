@@ -556,7 +556,7 @@ class PythonicParser(NormalDashNumberParser):
     def __init__(self):
         # type: () -> None
         NormalDashNumberParser.__init__(self,
-            decimalRgxStr=ALL_DASHES_RGX_STR+"?(((\\d+(_\\d+)*)(\\.(\\d+(_\\d+)*))?)|\\.(\\d+(_\\d+)*))",
+            decimalRgxStr=ALL_DASHES_RGX_STR+"?(((\\d+(_\\d+)*)(\\.(\\d+(_\\d+)*)?)?)|\\.(\\d+(_\\d+)*))",
             exponentRgxStr=ALL_DASHES_RGX_STR+"?\\d+(_\\d+)*",
             pvSep="_", radix=".", scinot="e"
         )

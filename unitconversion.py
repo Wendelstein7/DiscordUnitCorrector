@@ -187,7 +187,7 @@ class NormalUnit( SupportsSuperunit, Unit ):
                                     usernumber = actualnumSFcompli.addNumberOnLargerScale(usernumber, ratio, terminatingradix) / ratio
                         else:
                             actualnum = locale.parseNumber([numstring])
-                            if not isinstance(usernumber, float):
+                            if not isinstance(usernumber, (int, float)):
                                 raise RuntimeError("Inconsistent internal behavior!")
                             if actualnum < 12 and actualnum >= 0:
                                 ratio = 12

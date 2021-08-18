@@ -16,7 +16,7 @@ class SigFigCompliantNumber(SupportsAbs):
         self._parser = parser
         if ((exact and sigfigs is not None) or (exact and leastsigdig is not None)):
             raise ValueError("Cannot specify sig figs / places on an exact number!")
-        if isinstance(stringRepresentation, float):
+        if isinstance(stringRepresentation, (int, float)):
             self._value = stringRepresentation
         else:
             self._value = parser.parseNumber([stringRepresentation])
@@ -70,7 +70,10 @@ class SigFigCompliantNumber(SupportsAbs):
         if (self._isZero):
             return self._parser.createScientificString(0, -self._leastSignificantDigit)
         if (self._isNan):
-            return self._parser.createStringFloat(float("nan"))
+            strs = self._parser.createStrings(float("nan"))
+            if (len(strs) != 1):
+                raise NotImplementedError("Noncontiguous number in measurement context is not supported!")
+            return strs[0]
         return roundsignificant(self._value, self._numSigFigs, self._parser)
 
     # all math operations should behave under effectively the same contract as the python float class
@@ -228,7 +231,10 @@ def scientificnotation(string : str, sigfigs : int, parser : ParserSupportsSigFi
 # precondition: number is not zero
 def roundsignificant(number : float, sigfigs : int, parser : ParserSupportsSigFigs):
     if sigfigs == 0:
-        return parser.createStringInt(0)
+        strs = parser.createStrings(0)
+        if (len(strs) != 1):
+            raise NotImplementedError("Noncontiguous number in measurement context is not supported!")
+        return strs[0]
     scinot = False
     digits = -int(floor(log10(abs(number))))+sigfigs-1
     digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1

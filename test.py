@@ -61,10 +61,10 @@ class TestUnitCorrection(unittest.TestCase):
     def test_square_units(self):
         unit_pairs = [
             ["10.0 feet²", "0.929 m²"],
-            ["4.0 acres", "16000 m²"],
-            ["4 roods", "4000 m²"],
+            ["4.0 acres", "16,000 m²"],
+            ["4 roods", "4,000 m²"],
             ["4 miles²", "10 km²"],
-            ["4.000 ft²", "3716 cm²"]
+            ["4.000 ft²", "3,716 cm²"]
         ]
 
         for pair in unit_pairs:
@@ -92,12 +92,12 @@ class TestUnitCorrection(unittest.TestCase):
     
     def test_sig_figs(self):
         unit_pairs = [
-            ["4.004 ft²", "3720. cm²"],
+            ["4.004 ft²", "3,720. cm²"],
             ["1.2345678901234 inches", "3.1358024409134 cm"],
-            ["62. miles", "1.0e+2 km"],
+            ["62. miles", "1.0×10² km"], # todo make this work
             ["62.2 miles", "100. km"],
             ["6234 inches", "158.34 m"],
-            ["0.0 degrees freedom", "-17.8 °C"],
+            ["0.0 degrees freedom", "−17.8 °C"],
             ["32.0 degrees freedom", "0 °C"]
         ]
 
@@ -107,7 +107,7 @@ class TestUnitCorrection(unittest.TestCase):
             result = unitconversion.process(raw_unit)
             self.assertEqual(result, expected_unit)
     
-    def test_subunit_detection(self):
+    def test_subunit_detection(self): # todo make this work
         unit_pairs = [
             ["10 feet and 4 inches", "315 cm"],
             ["6 pounds, 2.1 ounces", "2.78 kg"],

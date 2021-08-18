@@ -1,18 +1,19 @@
 from math import isfinite, log10, floor, sqrt
-from typing import SupportsAbs, Union
+from typing import SupportsAbs, Union, Tuple
 from numberparsing import ParserSupportsSigFigs
 
 class SigFigCompliantNumber(SupportsAbs):
 
     def __init__(
             self,
-            stringRepresentation : Union[str, float],
-            parser : ParserSupportsSigFigs,
+            stringRepresentation, # type: Union[str, float]
+            parser, # type: ParserSupportsSigFigs
             *,
-            exact : bool = False,
-            sigfigs : int = None,
-            leastsigdig : int = None
+            exact = False, # type: bool
+            sigfigs = None, # type: int
+            leastsigdig = None # type: int
     ):
+        # type: (...) -> None
         self._parser = parser
         if ((exact and sigfigs is not None) or (exact and leastsigdig is not None)):
             raise ValueError("Cannot specify sig figs / places on an exact number!")
@@ -170,7 +171,8 @@ class SigFigCompliantNumber(SupportsAbs):
 
 MAX_SIG_FIGS = 1024
 
-def combineSuperAndSubunits(superunitval : SigFigCompliantNumber, subunitval : SigFigCompliantNumber, ratio : int, subunithasdot : bool = False):
+def combineSuperAndSubunits(superunitval, subunitval, ratio, subunithasdot = False):
+    # type: (SigFigCompliantNumber, SigFigCompliantNumber, int, bool) -> SigFigCompliantNumber
     if (subunitval > ratio or subunitval._leastSignificantDigit > 0 or subunitval < 0 or subunithasdot):
         subunitval += (superunitval * ratio)._value
         superunitoverprecision = (superunitval * ratio)._leastSignificantDigit - subunitval._leastSignificantDigit
@@ -178,7 +180,7 @@ def combineSuperAndSubunits(superunitval : SigFigCompliantNumber, subunitval : S
             subunitval._numSigFigs += superunitoverprecision
             subunitval._leastSignificantDigit += superunitoverprecision
     else:
-        (_, denom) = toLowestTerms(subunitval._value, ratio)
+        (_, denom) = toLowestTerms(int(subunitval._value), ratio)
         mindec = int(log10(5*denom))
         superunitval += subunitval / ratio
         superunitunderprecision = mindec - superunitval._leastSignificantDigit
@@ -188,7 +190,8 @@ def combineSuperAndSubunits(superunitval : SigFigCompliantNumber, subunitval : S
         subunitval = superunitval * ratio
     return subunitval
 
-def numSigFigs(string : str, parser : ParserSupportsSigFigs):
+def numSigFigs(string, parser):
+    # type: (str, ParserSupportsSigFigs) -> int
     lzs = 0
     (_, string) = parser.getPositive(string)
     exp = parser.getScinotRegex().search(string)
@@ -205,14 +208,15 @@ def numSigFigs(string : str, parser : ParserSupportsSigFigs):
             return len(string) - lzs - rmlength
         if (radixMatch.start() >= 0):
             return len(string) - lzs
-        return None
+        raise RuntimeError("Internally inconsistent behavior!")
     tzs = len(string) - 1
     while(string[tzs] == parser.createValuelessDigit()):
         tzs -= 1
     return tzs - lzs + 1
 
 # precondition: string is a full-form int, not terminated with a radix
-def scientificnotation(string : str, sigfigs : int, parser : ParserSupportsSigFigs):
+def scientificnotation(string, sigfigs, parser):
+    # type: (str, int, ParserSupportsSigFigs) -> str
     i=1
     j=0
     (ispos, abs_) = parser.getPositive(string)
@@ -229,7 +233,8 @@ def scientificnotation(string : str, sigfigs : int, parser : ParserSupportsSigFi
     return parser.createScientificString(out, str(len(string)-1-j))
 
 # precondition: number is not zero
-def roundsignificant(number : float, sigfigs : int, parser : ParserSupportsSigFigs):
+def roundsignificant(number, sigfigs, parser):
+    # type: (float, int, ParserSupportsSigFigs) -> str
     if sigfigs == 0:
         strs = parser.createStrings(0)
         if (len(strs) != 1):
@@ -262,7 +267,8 @@ def roundsignificant(number : float, sigfigs : int, parser : ParserSupportsSigFi
         return out + parser.createRadix()
     return out
 
-def leastSigDigit(string : str, parser : ParserSupportsSigFigs):
+def leastSigDigit(string, parser):
+    # type: (str, ParserSupportsSigFigs) -> int
     postdecimal = parser.getRadixRegex().search(string)
     pdlen = 0
     if postdecimal is not None:
@@ -274,6 +280,7 @@ def leastSigDigit(string : str, parser : ParserSupportsSigFigs):
     return pdlen - evalu
 
 def toLowestTerms(a, b):
+    # type: (int, int) -> Tuple[int, int]
     negative = False
     if ((a<0) ^ (b<0)):
         negative = True
@@ -286,8 +293,8 @@ def toLowestTerms(a, b):
     x = 2
     while (x <= sqrt(a) and x <= sqrt(b)):
         if (a%x==0 and b%x==0):
-            a /= x
-            b /= x
+            a //= x
+            b //= x
         else:
             x += 1
     return (-a if negative else a, b)

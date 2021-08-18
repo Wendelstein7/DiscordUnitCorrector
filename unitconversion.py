@@ -225,13 +225,11 @@ class NormalUnit( SupportsSuperunit, Unit ):
             spacings = [] # type: List[str]
     ):
         # type: (...) -> Optional[Tuple[str, Union[SigFigCompliantNumber, float], List[str], Callable[[Union[float, SigFigCompliantNumber], str, NumberParser], str]]]
-        spacerRes = NUMBER_UNIT_SPACERS_END_RGX.search(string)
-        if spacerRes is None:
-            return None
+        spacerRes = NUMBER_UNIT_SPACERS_END_RGX.finditer(string).__next__()
         spacing = spacerRes.group()
         preunitstr = string[ 0 : spacerRes.start() ]
         read = parser.takeNumberFromStringEnd(preunitstr)
-        if read is None:
+        if len(read[0]) == 0:
             return None
         (nums, notnums) = read
         if (len(nums) > 1 or len(notnums) > 1):
@@ -432,7 +430,7 @@ for key in units:
     unit_by_name_lookup[key._friendlyName] = key
 
 #Processes a string, converting freedom units to science units.
-def process(message, locales = ["en_US"]):
+def process(message, locales = ["en-US"]):
     # type: (str, List[str]) -> Optional[ModificableMessage]
     modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
     for u in units:

@@ -139,8 +139,8 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
             radixRgxStr = re.escape(radix)
         if scinotRgxStr is None:
             scinotRgxStr = re.escape(scinot)
-        numberRgxStr = decimalRgxStr + scinotRgxStr + integerRgxStr
-        numberRgxStrNoPvsep = decimalRgxStrNoPvsep + scinotRgxStr + integerRgxStrNoPvsep
+        numberRgxStr = decimalRgxStr + "(" + scinotRgxStr + integerRgxStr + ")?"
+        numberRgxStrNoPvsep = decimalRgxStrNoPvsep + "(" + scinotRgxStr + integerRgxStrNoPvsep + ")?"
         self.startRegex = re.compile("^" + numberRgxStr + "(?!"+digitsRgxStr+")") # type: re.Pattern
         self.startRegexNoPvsep = re.compile("^" + numberRgxStrNoPvsep + "(?!"+digitsRgxStr+")") # type: re.Pattern
         self.endRegex = re.compile("(?<!"+digitsRgxStr+")" + numberRgxStr + "$") # type: re.Pattern
@@ -426,8 +426,12 @@ class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupN
             zeroDigit = "0" # type: str
     ):
         # type: (...) -> None
+        if pvSepRgxStr is None:
+            pvSepRgxStr = re.escape(pvSep)
         if radixRgxStr is None:
             radixRgxStr = re.escape(radix)
+        if scinotRgxStr is None:
+            scinotRgxStr = re.escape(scinot)
         decimalRgxStr = "{0}?(((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+)(({3})({1})*)?|({3})({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, pvSepRgxStr, radixRgxStr)
         integerRgxStr = "{0}?((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, pvSepRgxStr)
         decimalRgxStrNoPvsep = "{0}?((({1})+({2}({1})*)?)|({2}({1})+))".format(ALL_DASHES_RGX_STR, digitsRgxStr, radixRgxStr)

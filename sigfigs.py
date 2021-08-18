@@ -84,84 +84,84 @@ class SigFigCompliantNumber(SupportsAbs):
     def __add__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             if (self._isNan or other._isNan):
-                return SigFigCompliantNumber(self._value + other._value)
-            return SigFigCompliantNumber(self._value + other._value, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
+                return SigFigCompliantNumber(self._value + other._value, self._parser)
+            return SigFigCompliantNumber(self._value + other._value, self._parser, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
         else:
-            return self + SigFigCompliantNumber(other, exact=True)
+            return self + SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __sub__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             if (self._isNan or other._isNan):
-                return SigFigCompliantNumber(self._value - other._value)
-            return SigFigCompliantNumber(self._value - other._value, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
+                return SigFigCompliantNumber(self._value - other._value, self._parser)
+            return SigFigCompliantNumber(self._value - other._value, self._parser, leastsigdig=min(self._leastSignificantDigit, other._leastSignificantDigit))
         else:
-            return self - SigFigCompliantNumber(other, exact=True)
+            return self - SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __mul__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             if (self._isNan or other._isNan):
-                return SigFigCompliantNumber(self._value * other._value)
+                return SigFigCompliantNumber(self._value * other._value, self._parser)
             if (self._isZero):
                 outLeastSigDigit = self._leastSignificantDigit
                 outLeastSigDigit -= int(round(log10(other._value)))
-                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
+                return SigFigCompliantNumber(0, self._parser, leastsigdig=outLeastSigDigit)
             if (other._isZero):
                 outLeastSigDigit = other._leastSignificantDigit
                 outLeastSigDigit -= int(round(log10(self._value)))
-                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
-            return SigFigCompliantNumber(self._value * other._value, sigfigs=min(self._numSigFigs, other._numSigFigs))
+                return SigFigCompliantNumber(0, self._parser, leastsigdig=outLeastSigDigit)
+            return SigFigCompliantNumber(self._value * other._value, self._parser, sigfigs=min(self._numSigFigs, other._numSigFigs))
         else:
-            return self * SigFigCompliantNumber(other, exact=True)
+            return self * SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __truediv__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             if (other._isZero):
                 raise ZeroDivisionError("SigFigCompliantNumber division by zero")
             if (self._isNan or other._isNan):
-                return SigFigCompliantNumber(self._value + other._value)
+                return SigFigCompliantNumber(self._value + other._value, self._parser)
             if (self._isZero):
                 outLeastSigDigit = self._leastSignificantDigit
                 outLeastSigDigit += int(round(log10(other._value)))
-                return SigFigCompliantNumber(0, leastsigdig=outLeastSigDigit)
-            return SigFigCompliantNumber(self._value / other._value, sigfigs=min(self._numSigFigs, other._numSigFigs))
+                return SigFigCompliantNumber(0, self._parser, leastsigdig=outLeastSigDigit)
+            return SigFigCompliantNumber(self._value / other._value, self._parser, sigfigs=min(self._numSigFigs, other._numSigFigs))
         else:
-            return self / SigFigCompliantNumber(other, exact=True)
+            return self / SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __lt__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value < other._value
         else:
-            return self < SigFigCompliantNumber(other, exact=True)
+            return self < SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __le__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value <= other._value
         else:
-            return self <= SigFigCompliantNumber(other, exact=True)
+            return self <= SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __ne__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value != other._value
         else:
-            return self != SigFigCompliantNumber(other, exact=True)
+            return self != SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __eq__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value == other._value
         else:
-            return self == SigFigCompliantNumber(other, exact=True)
+            return self == SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __gt__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value > other._value
         else:
-            return self > SigFigCompliantNumber(other, exact=True)
+            return self > SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __ge__(self, other):
         if (isinstance(other, SigFigCompliantNumber)):
             return self._value >= other._value
         else:
-            return self >= SigFigCompliantNumber(other, exact=True)
+            return self >= SigFigCompliantNumber(other, self._parser, exact=True)
     
     def __abs__(self):
         if (self._value >= 0):

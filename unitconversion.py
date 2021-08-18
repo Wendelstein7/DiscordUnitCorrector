@@ -219,11 +219,11 @@ class NormalUnit( SupportsSuperunit, Unit ):
             message.setText(finalMessage)
 
     def getValueFromIteration(
-                            self,
-                            string, # type: str
-                            parser, # type: NumberParser
-                            spacings = [] # type: List[str]
-                            ):
+            self,
+            string, # type: str
+            parser, # type: NumberParser
+            spacings = [] # type: List[str]
+    ):
         # type: (...) -> Optional[Tuple[str, Union[SigFigCompliantNumber, float], List[str], Callable[[Union[float, SigFigCompliantNumber], str, NumberParser], str]]]
         spacerRes = NUMBER_UNIT_SPACERS_END_RGX.search(string)
         if spacerRes is None:

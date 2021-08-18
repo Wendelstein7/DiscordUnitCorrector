@@ -119,19 +119,19 @@ class ParserSupportsSigFigs(ParserSupportsPosNeg, ParserSupportsSciNotation):
 # a contiguous number with place value separators and a radix
 class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
     def __init__(self, *,
-                decimalRgxStr, # type: str
-                integerRgxStr, # type: str
-                decimalRgxStrNoPvsep, # type: str
-                integerRgxStrNoPvsep, # type: str
-                pvSep, # type: str
-                pvSepRgxStr = None, # type: Optional[str]
-                radix, # type: str
-                radixRgxStr = None, # type: Optional[str]
-                scinot, # type: str
-                scinotRgxStr = None, # type: Optional[str]
-                digitsRgxStr = "\\d", # type: str
-                zeroDigit = "0" # type: str
-            ):
+            decimalRgxStr, # type: str
+            integerRgxStr, # type: str
+            decimalRgxStrNoPvsep, # type: str
+            integerRgxStrNoPvsep, # type: str
+            pvSep, # type: str
+            pvSepRgxStr = None, # type: Optional[str]
+            radix, # type: str
+            radixRgxStr = None, # type: Optional[str]
+            scinot, # type: str
+            scinotRgxStr = None, # type: Optional[str]
+            digitsRgxStr = "\\d", # type: str
+            zeroDigit = "0" # type: str
+    ):
         # type: (...) -> None
         if pvSepRgxStr is None:
             pvSepRgxStr = re.escape(pvSep)
@@ -247,19 +247,19 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
 
 class NormalDashNumberParser(NormalNumberParser):
     def __init__(self, *,
-                decimalRgxStr, # type: str
-                integerRgxStr, # type: str
-                decimalRgxStrNoPvsep = None, # type: Optional[str]
-                integerRgxStrNoPvsep = None, # type: Optional[str]
-                pvSep, # type: str
-                pvSepRgxStr = None, # type: Optional[str]
-                radix, # type: str
-                radixRgxStr = None, # type: Optional[str]
-                scinot, # type: str
-                scinotRgxStr = None, # type: Optional[str]
-                digitsRgxStr = "\\d", # type: str
-                zeroDigit = "0" # type: str
-            ):
+            decimalRgxStr, # type: str
+            integerRgxStr, # type: str
+            decimalRgxStrNoPvsep = None, # type: Optional[str]
+            integerRgxStrNoPvsep = None, # type: Optional[str]
+            pvSep, # type: str
+            pvSepRgxStr = None, # type: Optional[str]
+            radix, # type: str
+            radixRgxStr = None, # type: Optional[str]
+            scinot, # type: str
+            scinotRgxStr = None, # type: Optional[str]
+            digitsRgxStr = "\\d", # type: str
+            zeroDigit = "0" # type: str
+    ):
         # type: (...) -> None
         if radixRgxStr is None:
             radixRgxStr = re.escape(radix)
@@ -318,19 +318,19 @@ class NormalDashNumberParser(NormalNumberParser):
 
 class NormalThreeGroupNumberParser(NormalNumberParser):
     def __init__(self, *,
-                decimalRgxStr, # type: str
-                integerRgxStr, # type: str
-                decimalRgxStrNoPvsep, # type: str
-                integerRgxStrNoPvsep, # type: str
-                pvSep, # type: str
-                pvSepRgxStr = None, # type: Optional[str]
-                radix, # type: str
-                radixRgxStr = None, # type: Optional[str]
-                scinot, # type: str
-                scinotRgxStr = None, # type: Optional[str]
-                digitsRgxStr = "\\d", # type: str
-                zeroDigit = "0" # type: str
-            ):
+            decimalRgxStr, # type: str
+            integerRgxStr, # type: str
+            decimalRgxStrNoPvsep, # type: str
+            integerRgxStrNoPvsep, # type: str
+            pvSep, # type: str
+            pvSepRgxStr = None, # type: Optional[str]
+            radix, # type: str
+            radixRgxStr = None, # type: Optional[str]
+            scinot, # type: str
+            scinotRgxStr = None, # type: Optional[str]
+            digitsRgxStr = "\\d", # type: str
+            zeroDigit = "0" # type: str
+    ):
         # type: (...) -> None
         NormalNumberParser.__init__(
             self,
@@ -416,15 +416,15 @@ class NormalThreeGroupNumberParser(NormalNumberParser):
 
 class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupNumberParser):
     def __init__(self, *,
-                pvSep, # type: str
-                pvSepRgxStr = None, # type: Optional[str]
-                radix, # type: str
-                radixRgxStr = None, # type: Optional[str]
-                scinot, # type: str
-                scinotRgxStr = None, # type: Optional[str]
-                digitsRgxStr = "\\d", # type: str
-                zeroDigit = "0" # type: str
-            ):
+            pvSep, # type: str
+            pvSepRgxStr = None, # type: Optional[str]
+            radix, # type: str
+            radixRgxStr = None, # type: Optional[str]
+            scinot, # type: str
+            scinotRgxStr = None, # type: Optional[str]
+            digitsRgxStr = "\\d", # type: str
+            zeroDigit = "0" # type: str
+    ):
         # type: (...) -> None
         if radixRgxStr is None:
             radixRgxStr = re.escape(radix)

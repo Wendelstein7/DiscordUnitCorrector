@@ -8,7 +8,7 @@ def orRegexStrFromArray(options):
     output += ")"
     return output
 
-MATCH_NOTHING_RGX = re.compile("\A\b\Z^$")
+MATCH_NOTHING_RGX = re.compile("\\A\\b\\Z^$")
 
 ALL_DASHES_ARR = ["-", "‐", "‑", "–", "‒", "−"]
 ALL_DASHES_RGX_STR = orRegexStrFromArray(ALL_DASHES_ARR)
@@ -16,6 +16,15 @@ ALL_DASHES_RGX = re.compile(ALL_DASHES_RGX_STR)
 ALL_PRIMES_ARR = ["'", "‘", "’", "`", "´"]
 ALL_PRIMES_RGX_STR = orRegexStrFromArray(ALL_PRIMES_ARR)
 ALL_PRIMES_RGX = re.compile(ALL_PRIMES_RGX_STR)
+ALL_PLUS_ARR = ["＋", "+"]
+ALL_PLUS_RGX_STR = orRegexStrFromArray(ALL_PLUS_ARR)
+ALL_PLUS_RGX = re.compile(ALL_PLUS_RGX_STR)
+ALL_TIMES_ARR = ["×", "x", "*"]
+ALL_TIMES_RGX_STR = orRegexStrFromArray(ALL_TIMES_ARR)
+ALL_TIMES_RGX = re.compile(ALL_TIMES_RGX_STR)
+SUPERSCRIPT_DIGITS_ARR = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
+SUPERSCRIPT_DIGITS_RGX_STR = orRegexStrFromArray(SUPERSCRIPT_DIGITS_ARR)
+SUPERSCRIPT_DIGITS_RGX = re.compile(SUPERSCRIPT_DIGITS_RGX_STR)
 
 DISCORD_FORMAT_CONTROL_REGEX = re.compile("(?<!\\\\)(´|`|\\*|_|~~)|((?<=\n)> |(?<=^)> )")
 

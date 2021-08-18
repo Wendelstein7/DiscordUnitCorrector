@@ -167,7 +167,7 @@ class SigFigCompliantNumber(SupportsAbs):
         if (self._value >= 0):
             return self
         else:
-            return SigFigCompliantNumber(-self._value, sigfigs=self._numSigFigs, leastsigdig=self._leastSignificantDigit)
+            return SigFigCompliantNumber(-self._value, self._parser, sigfigs=self._numSigFigs, leastsigdig=self._leastSignificantDigit)
 
 MAX_SIG_FIGS = 1024
 
@@ -218,19 +218,12 @@ def numSigFigs(string, parser):
 def scientificnotation(string, sigfigs, parser):
     # type: (str, int, ParserSupportsSigFigs) -> str
     i=1
-    j=0
     (ispos, abs_) = parser.getPositive(string)
-    if ispos:
-        sigfigs += 1
-        i += 1
-        j += 1
-        out = abs_[0] + parser.createRadix()
-    else:
-        out = string[0] + parser.createRadix()
+    out = abs_[0] + parser.createRadix()
     while(i<sigfigs):
-        out += string[i]
+        out += abs_[i]
         i += 1
-    return parser.createScientificString(out, str(len(string)-1-j))
+    return parser.setPositive(parser.createScientificString(out, len(abs_)-1), ispos)
 
 # precondition: number is not zero
 def roundsignificant(number, sigfigs, parser):
@@ -245,34 +238,33 @@ def roundsignificant(number, sigfigs, parser):
     digits = -int(floor(log10(abs(round(number, digits)))))+sigfigs-1
     rounded = round(number, digits)
     if (digits <= 0):
-        if (parser.isScientificString(str(float(number)))):
+        if ("e" in str(float(number))):
             scinot = True
         rounded = round(rounded)
     out = str(rounded)
     if (digits > 0):
         addex = len(out)
-        scinotmatch = parser.getScinotRegex().search(out)
-        if (scinotmatch is not None):
-            addex = scinotmatch.start()
-        if ((parser.getRadixRegex().search(out) is not None) and sigfigs > 1):
+        if ("e" in out):
+            addex = out.find("e")
+        if ((parser.getRadixRegex().search(out) is None) and sigfigs > 1):
             out = out[0:addex] + parser.createRadix() + out[addex:len(out)]
             addex += 1
         while (numSigFigs(out, parser) < sigfigs):
             out = out[0:addex] + parser.createValuelessDigit() + out[addex:len(out)]
-        return out
+        return parser.reformat(out)
     bad = numSigFigs(out, parser) != sigfigs
     if (scinot or (bad and digits != 0)):
         return scientificnotation(out, sigfigs, parser)
     if (bad and digits == 0):
-        return out + parser.createRadix()
-    return out
+        return parser.reformat(out) + parser.createRadix()
+    return parser.reformat(out)
 
 def leastSigDigit(string, parser):
     # type: (str, ParserSupportsSigFigs) -> int
     postdecimal = parser.getRadixRegex().search(string)
     pdlen = 0
     if postdecimal is not None:
-        pdlen = len(string) - postdecimal.start()
+        pdlen = len(string) - postdecimal.end()
     exponential = parser.getScinotRegex().search(string)
     evalu = 0
     if exponential is not None:

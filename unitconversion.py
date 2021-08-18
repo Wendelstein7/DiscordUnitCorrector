@@ -54,10 +54,7 @@ class UnitType:
                     if (match.end() == len(numstr)):
                         numstr = numstr[0:match.start()]
         else:
-            numstrs = parser.createStrings(value / multiple)
-            if (len(numstrs) != 1):
-                raise NotImplementedError("Not configured to handle noncontiguous numbers!")
-            numstr = numstrs[0]
+            numstr = str(value / multiple)
         return numstr + spacing + self._multiples[multiple]
 
     def getString( self, value, spacing, parser ):
@@ -158,7 +155,7 @@ class NormalUnit( SupportsSuperunit, Unit ):
                     if (len(numstrings) > 1 or len(remstrs) > 1):
                         raise NotImplementedError("Does not yet support noncontiguous numbers!")
                     numstring = numstrings[0]
-                    remstr = remstrs[0]
+                    remstr = "" if len(remstrs) == 0 else remstrs[0]
                     spclen = NUMBER_UNIT_SPACERS_START_RGX.finditer(remstr).__next__().end()
                     remstr = remstr[spclen:]
                     end2 += len(numstring)
@@ -234,7 +231,7 @@ class NormalUnit( SupportsSuperunit, Unit ):
         (nums, notnums) = read
         if (len(nums) > 1 or len(notnums) > 1):
             raise NotImplementedError("Noncontinguous numbers not supported!")
-        usernumber : Union[SigFigCompliantNumber, float] = 0
+        usernumber = 0 # type: Union[SigFigCompliantNumber, float]
         if isinstance(parser, ParserSupportsSigFigs):
             usernumber = SigFigCompliantNumber(nums[0], parser)
         else:
@@ -251,9 +248,14 @@ class NormalUnit( SupportsSuperunit, Unit ):
                 value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
                 if value is None:
                     continue
-                if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (spacer.span()[1] == spacer.span()[0])):
+                if ((len(SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(nums[0]).__next__().group()) > 0) and (spacer.span()[1] == spacer.span()[0])):
                     nums[0] = nums[0][1:]
-                    usernumber = parser.parseNumber(nums)
+                    if (len(nums) > 1 or len(notnums) > 1):
+                        raise NotImplementedError("Noncontinguous numbers not supported!")
+                    if isinstance(parser, ParserSupportsSigFigs):
+                        usernumber = SigFigCompliantNumber(nums[0], parser)
+                    else:
+                        usernumber = parser.parseNumber(nums)
                 (preunitstr, supernumber, spacings, _) = value
                 ratio = superunit[1]
                 if isinstance(usernumber, SigFigCompliantNumber):
@@ -276,9 +278,14 @@ class NormalUnit( SupportsSuperunit, Unit ):
                     value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
                     if value is None:
                         continue
-                    if ((SUPERUNIT_SUBUNIT_SPACER_START_RGX.search(nums[0]) is not None) and (spacer.span()[1] == spacer.span()[0])):
+                    if ((len(SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(nums[0]).__next__().group()) > 0) and (spacer.span()[1] == spacer.span()[0])):
                         nums[0] = nums[0][1:]
-                        usernumber = parser.parseNumber(nums)
+                        if (len(nums) > 1 or len(notnums) > 1):
+                            raise NotImplementedError("Noncontinguous numbers not supported!")
+                        if isinstance(parser, ParserSupportsSigFigs):
+                            usernumber = SigFigCompliantNumber(nums[0], parser)
+                        else:
+                            usernumber = parser.parseNumber(nums)
                     (preunitstr, supernumber, spacings, _) = value
                     ratio = superunit[1]
                     if isinstance(usernumber, SigFigCompliantNumber):
@@ -439,3 +446,5 @@ def process(message, locales = ["en-US"]):
     if modificableMessage.isModified():
         return modificableMessage.getText()
     return None
+
+process("I'm 4 foot 9 pounds")

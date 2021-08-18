@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Dict, List, Tuple, Union, Optional
-from compiledregexes import ALL_DASHES_RGX_STR, ALL_DASHES_RGX
+from compiledregexes import *
 import re
 
 class NumberParser:
@@ -33,14 +33,14 @@ class NumberParser:
         spans1 = self.getNumberSpans(string, enablepvseps)
         spans2 = self.getNumberSpans(string[:-1], enablepvseps)
         for spans1_elem in spans1:
-            if not spans1 in spans2:
+            if not spans1_elem in spans2:
                 in_ = []
                 out_ = []
                 tracer = 0
                 while tracer < len(string):
                     min_ = (len(string), len(string))
                     for span in spans1_elem:
-                        if span[0] < min_[0]:
+                        if (span[0] < min_[0] and span[0] >= tracer):
                             min_ = span
                     if min_[0] == tracer:
                         in_.append(string[min_[0]:min_[1]])
@@ -56,14 +56,14 @@ class NumberParser:
         spans1 = self.getNumberSpans(string, enablepvseps)
         spans2 = self.getNumberSpans(string[1:], enablepvseps)
         for spans1_elem in spans1:
-            if not spans1 in spans2:
+            if not spans1_elem in spans2:
                 in_ = []
                 out_ = []
                 tracer = 0
                 while tracer < len(string):
                     min_ = (len(string), len(string))
                     for span in spans1_elem:
-                        if span[0] < min_[0]:
+                        if (span[0] < min_[0] and span[0] >= tracer):
                             min_ = span
                     if min_[0] == tracer:
                         in_.append(string[min_[0]:min_[1]])
@@ -94,6 +94,15 @@ class ParserSupportsSciNotation(NumberParser):
         # type: (str) -> bool
         pass
 
+class SuperExponentialMaker:
+    def liftNumber(self, num):
+        # type: (int) -> str
+        chars = str(num)
+        out = ""
+        for i in range(len(chars)):
+            out += SUPERSCRIPT_DIGITS_ARR[int(chars[i])]
+        return out
+
 class ParserSupportsSigFigs(ParserSupportsPosNeg, ParserSupportsSciNotation):
     @abstractmethod
     def getRadixRegex(self):
@@ -115,14 +124,17 @@ class ParserSupportsSigFigs(ParserSupportsPosNeg, ParserSupportsSciNotation):
     def createValuelessDigit(self):
         # type: () -> str
         pass
+    @abstractmethod
+    def reformat(self, string): # given just the digits, radix, and scientific notation, put in the rest of the stuff
+        # type: (str) -> str
+        pass
 
 # a contiguous number with place value separators and a radix
 class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
     def __init__(self, *,
             decimalRgxStr, # type: str
-            integerRgxStr, # type: str
             decimalRgxStrNoPvsep, # type: str
-            integerRgxStrNoPvsep, # type: str
+            exponentRgxStr, # type: str
             pvSep, # type: str
             pvSepRgxStr = None, # type: Optional[str]
             radix, # type: str
@@ -139,8 +151,8 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
             radixRgxStr = re.escape(radix)
         if scinotRgxStr is None:
             scinotRgxStr = re.escape(scinot)
-        numberRgxStr = decimalRgxStr + "(" + scinotRgxStr + integerRgxStr + ")?"
-        numberRgxStrNoPvsep = decimalRgxStrNoPvsep + "(" + scinotRgxStr + integerRgxStrNoPvsep + ")?"
+        numberRgxStr = decimalRgxStr + "(" + scinotRgxStr + exponentRgxStr + ")?"
+        numberRgxStrNoPvsep = decimalRgxStrNoPvsep + "(" + scinotRgxStr + exponentRgxStr + ")?"
         self.startRegex = re.compile("^" + numberRgxStr + "(?!"+digitsRgxStr+")") # type: re.Pattern
         self.startRegexNoPvsep = re.compile("^" + numberRgxStrNoPvsep + "(?!"+digitsRgxStr+")") # type: re.Pattern
         self.endRegex = re.compile("(?<!"+digitsRgxStr+")" + numberRgxStr + "$") # type: re.Pattern
@@ -188,6 +200,11 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
         # type: (int) -> str
         pass
 
+    @abstractmethod
+    def reformat(self, string):
+        # type: (str) -> str
+        pass
+
     def takeNumberFromStringEnd(self, string, enablepvseps = True):
         # type: (str, bool) -> Tuple[List[str], List[str]]
         match = (self.endRegex if enablepvseps else self.endRegexNoPvsep).search(string)
@@ -200,7 +217,7 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
         match = (self.startRegex if enablepvseps else self.startRegexNoPvsep).search(string)
         if match is None:
             return ([], [string])
-        return ([match.group()], [string[match.start():]] if match.end() < len(string) else [])
+        return ([match.group()], [string[match.end():]] if match.end() < len(string) else [])
 
     @abstractmethod
     def getPositive(self, string):
@@ -218,7 +235,11 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
         if not isinstance(base, str):
             negate = base < 0
             base = self.createStrings(base)[0]
-        out = base + self.usableScinotStr + (exponent if isinstance(exponent, str) else self.createStrings(exponent)[0])
+        if not isinstance(exponent, str):
+            exponent = self.createStrings(exponent)[0]
+        if isinstance(self, SuperExponentialMaker) and (self.parseNumber([exponent])%1==0):
+            exponent = self.liftNumber(int(self.parseNumber([exponent])))
+        out = base + self.usableScinotStr + exponent
         return self.setPositive(out, not negate)
 
     def isScientificString(self, string):
@@ -248,9 +269,8 @@ class NormalNumberParser(ParserSupportsSigFigs, NumberParser):
 class NormalDashNumberParser(NormalNumberParser):
     def __init__(self, *,
             decimalRgxStr, # type: str
-            integerRgxStr, # type: str
             decimalRgxStrNoPvsep = None, # type: Optional[str]
-            integerRgxStrNoPvsep = None, # type: Optional[str]
+            exponentRgxStr = None, # type: Optional[str]
             pvSep, # type: str
             pvSepRgxStr = None, # type: Optional[str]
             radix, # type: str
@@ -265,14 +285,13 @@ class NormalDashNumberParser(NormalNumberParser):
             radixRgxStr = re.escape(radix)
         if decimalRgxStrNoPvsep is None:
             decimalRgxStrNoPvsep = "{0}?((({1})+(({2})({1})*)?)|(({2})({1})+))".format(ALL_DASHES_RGX_STR, digitsRgxStr, radixRgxStr)
-        if integerRgxStrNoPvsep is None:
-            integerRgxStrNoPvsep = "{0}?(({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr)
+        if exponentRgxStr is None:
+            exponentRgxStr = "({0}|{2})?(({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, ALL_PLUS_RGX_STR)
         NormalNumberParser.__init__(
             self,
             decimalRgxStr=decimalRgxStr,
-            integerRgxStr=integerRgxStr,
             decimalRgxStrNoPvsep=decimalRgxStrNoPvsep,
-            integerRgxStrNoPvsep=integerRgxStrNoPvsep,
+            exponentRgxStr=exponentRgxStr,
             pvSep=pvSep,
             pvSepRgxStr=pvSepRgxStr,
             radix=radix,
@@ -296,6 +315,11 @@ class NormalDashNumberParser(NormalNumberParser):
     @abstractmethod
     def createStringInt(self, number):
         # type: (int) -> str
+        pass
+
+    @abstractmethod
+    def reformat(self, string):
+        # type: (str) -> str
         pass
 
     def getPositive(self, string):
@@ -319,9 +343,8 @@ class NormalDashNumberParser(NormalNumberParser):
 class NormalThreeGroupNumberParser(NormalNumberParser):
     def __init__(self, *,
             decimalRgxStr, # type: str
-            integerRgxStr, # type: str
             decimalRgxStrNoPvsep, # type: str
-            integerRgxStrNoPvsep, # type: str
+            exponentRgxStr, # type: str
             pvSep, # type: str
             pvSepRgxStr = None, # type: Optional[str]
             radix, # type: str
@@ -335,9 +358,8 @@ class NormalThreeGroupNumberParser(NormalNumberParser):
         NormalNumberParser.__init__(
             self,
             decimalRgxStr=decimalRgxStr,
-            integerRgxStr=integerRgxStr,
             decimalRgxStrNoPvsep=decimalRgxStrNoPvsep,
-            integerRgxStrNoPvsep=integerRgxStrNoPvsep,
+            exponentRgxStr=exponentRgxStr,
             pvSep=pvSep,
             pvSepRgxStr=pvSepRgxStr,
             radix=radix,
@@ -356,38 +378,41 @@ class NormalThreeGroupNumberParser(NormalNumberParser):
         number = abs(number)
         output = str(number)
         output = output[:-2] if output.endswith(".0") else output
+        if "e" in output:
+            parts = output.split("e")
+            return [self.createScientificString(float(parts[0]), int(parts[1]))]
         output.replace(".", self.usableRadix)
-        outputparts = output.split("e")
-        m = self.radixRegex.search(outputparts[0])
-        i = len(outputparts[0])
+        m = self.radixRegex.search(output)
+        i = len(output)
         if m is not None:
             i = m.start()
         while True:
             i -= 3
             if i <= 0:
                 break
-            outputparts[0] = outputparts[0][:i] + self.usablePvSep + outputparts[0][i:]
-        return [self.setPositive(output + ((self.usableScinotStr + outputparts[1]) if len(outputparts) > 1 else ""), not negate)]
+            output = output[:i] + self.usablePvSep + output[i:]
+        return [self.setPositive(output, not negate)]
 
     def createStringFloat(self, number):
         # type: (float) -> str
-        negate = False
         if (number < 0):
             negate = True
         number = abs(number)
         output = str(number)
+        if "e" in output:
+            parts = output.split("e")
+            return self.createScientificString(float(parts[0]), int(parts[1]))
         output.replace(".", self.usableRadix)
-        outputparts = output.split("e")
-        m = self.radixRegex.search(outputparts[0])
-        i = len(outputparts[0])
+        m = self.radixRegex.search(output)
+        i = len(output)
         if m is not None:
             i = m.start()
         while True:
             i -= 3
             if i <= 0:
                 break
-            outputparts[0] = outputparts[0][:i] + self.usablePvSep + outputparts[0][i:]
-        return self.setPositive(output + ((self.usableScinotStr + outputparts[1]) if len(outputparts) > 1 else ""), not negate)
+            output = output[:i] + self.usablePvSep + output[i:]
+        return self.setPositive(output, not negate)
 
     def createStringInt(self, number):
         # type: (int) -> str
@@ -403,6 +428,21 @@ class NormalThreeGroupNumberParser(NormalNumberParser):
                 break
             output = output[:i] + self.usablePvSep + output[i:]
         return self.setPositive(output, not negate)
+
+    @abstractmethod
+    def reformat(self, string):
+        # type: (str) -> str
+        (positive, number) = self.getPositive(string)
+        m = self.radixRegex.search(number)
+        i = len(number)
+        if m is not None:
+            i = m.start()
+        while True:
+            i -= 3
+            if i <= 0:
+                break
+            number = number[:i] + self.usablePvSep + number[i:]
+        return self.setPositive(number, positive)
 
     @abstractmethod
     def getPositive(self, string):
@@ -433,15 +473,13 @@ class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupN
         if scinotRgxStr is None:
             scinotRgxStr = re.escape(scinot)
         decimalRgxStr = "{0}?(((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+)(({3})({1})*)?|({3})({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, pvSepRgxStr, radixRgxStr)
-        integerRgxStr = "{0}?((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, pvSepRgxStr)
         decimalRgxStrNoPvsep = "{0}?((({1})+({2}({1})*)?)|({2}({1})+))".format(ALL_DASHES_RGX_STR, digitsRgxStr, radixRgxStr)
-        integerRgxStrNoPvsep = "{0}?(({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr)
+        integerRgxStrNoPvsep = "({0}|{2})?(({1})+)".format(ALL_DASHES_RGX_STR, digitsRgxStr, ALL_PLUS_RGX_STR)
         NormalNumberParser.__init__(
             self,
             decimalRgxStr=decimalRgxStr,
-            integerRgxStr=integerRgxStr,
             decimalRgxStrNoPvsep=decimalRgxStrNoPvsep,
-            integerRgxStrNoPvsep=integerRgxStrNoPvsep,
+            exponentRgxStr=integerRgxStrNoPvsep,
             pvSep=pvSep,
             pvSepRgxStr=pvSepRgxStr,
             radix=radix,
@@ -451,7 +489,7 @@ class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupN
             digitsRgxStr=digitsRgxStr,
             zeroDigit=zeroDigit
         )
-    
+
     def createStrings(self, number):
         # type: (float) -> List[str]
         return NormalThreeGroupNumberParser.createStrings(self, number)
@@ -464,6 +502,10 @@ class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupN
         # type: (int) -> str
         return NormalThreeGroupNumberParser.createStringInt(self, number)
 
+    def reformat(self, string):
+        # type: (str) -> str
+        return NormalThreeGroupNumberParser.reformat(self, string)
+
     def getPositive(self, string):
         # type: (str) -> Tuple[bool, str]
         return NormalDashNumberParser.getPositive(self, string)
@@ -472,15 +514,42 @@ class NormalDashThreeGroupNumberParser(NormalDashNumberParser, NormalThreeGroupN
         # type: (str, bool) -> str
         return NormalDashNumberParser.setPositive(self, string, positive)
 
-# at some point, some utility functions to help generate the regular expression strings could be handy
+# Normal Parser, uses dashes for negatives, uses groups of three between radices, and uses superscript exponents
+class FixedSuperParser(NormalDashThreeGroupNumberParser, SuperExponentialMaker):
+    def __init__(self, *,
+            pvSep, # type: str
+            pvSepRgxStr = None, # type: Optional[str]
+            radix, # type: str
+            radixRgxStr = None, # type: Optional[str]
+    ):
+        if pvSepRgxStr is None:
+            pvSepRgxStr = re.escape(pvSep)
+        if radixRgxStr is None:
+            radixRgxStr = re.escape(radix)
+        decimalRgxStr = "{0}?(((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+)(({3})({1})*)?|({3})({1})+)".format(ALL_DASHES_RGX_STR, "[0-9]", pvSepRgxStr, radixRgxStr)
+        exponentRgxStr = "({0}|{3})?((({1}){{1,3}}(({2})({1}){{3}})+)|({1})+|({4})+)".format(ALL_DASHES_RGX_STR, "[0-9]", pvSepRgxStr, ALL_PLUS_RGX_STR, SUPERSCRIPT_DIGITS_RGX_STR)
+        decimalRgxStrNoPvsep = "{0}?((({1})+({2}({1})*)?)|({2}({1})+))".format(ALL_DASHES_RGX_STR, "[0-9]", radixRgxStr)
+        NormalNumberParser.__init__(self,
+            decimalRgxStr=decimalRgxStr,
+            decimalRgxStrNoPvsep=decimalRgxStrNoPvsep,
+            exponentRgxStr=exponentRgxStr,
+            pvSep=pvSep,
+            pvSepRgxStr=pvSepRgxStr,
+            radix=radix,
+            radixRgxStr=radixRgxStr,
+            scinot="×10",
+            scinotRgxStr="(({1})10(?={0})|({1})10\\^)".format(SUPERSCRIPT_DIGITS_RGX_STR, ALL_TIMES_RGX_STR),
+            digitsRgxStr="[0-9]",
+            zeroDigit="0"
+        )
 
 NUMBER_PARSERS = {} # type: Dict[str, NumberParser]
 
 # en-US (English, United States)
-NUMBER_PARSERS["en-US"] = NormalDashThreeGroupNumberParser(pvSep=",", radix=".", scinot="*10^", digitsRgxStr="[0-9]")
+NUMBER_PARSERS["en-US"] = FixedSuperParser(pvSep=",", radix=".")
 
 # en-ZA (English, South Africa)
-NUMBER_PARSERS["en-ZA"] = NormalDashThreeGroupNumberParser(pvSep=" ", pvSepRgxStr="\\s", radix=".", scinot="*10^", digitsRgxStr="[0-9]")
+NUMBER_PARSERS["en-ZA"] = FixedSuperParser(pvSep=" ", pvSepRgxStr="\\s", radix=".")
 
 # pythonic (handles numbers the same way python does)
 class PythonicParser(NormalDashNumberParser):
@@ -488,7 +557,7 @@ class PythonicParser(NormalDashNumberParser):
         # type: () -> None
         NormalDashNumberParser.__init__(self,
             decimalRgxStr=ALL_DASHES_RGX_STR+"?(((\\d+(_\\d+)*)(\\.(\\d+(_\\d+)*))?)|\\.(\\d+(_\\d+)*))",
-            integerRgxStr=ALL_DASHES_RGX_STR+"?\\d+(_\\d+)*",
+            exponentRgxStr=ALL_DASHES_RGX_STR+"?\\d+(_\\d+)*",
             pvSep="_", radix=".", scinot="e"
         )
     def createStrings(self, number):
@@ -500,6 +569,8 @@ class PythonicParser(NormalDashNumberParser):
     def createStringInt(self, number):
         # type: (int) -> str
         return str(int(number))
+    def reformat(self, string):
+        return string
 NUMBER_PARSERS["pythonic"] = PythonicParser()
 
 # add more parsers as necessary

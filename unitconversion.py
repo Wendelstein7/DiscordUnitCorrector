@@ -436,7 +436,7 @@ for key in units:
                 raise NotImplementedError("Superuniting is not supported for unit type " + str(type(potentialsuperunit)) + "!")
     unit_by_name_lookup[key._friendlyName] = key
 
-#Processes a string, converting freedom units to science units.
+# Processes a string, converting freedom units to science units.
 def process(message, locales = ["en-US"]):
     # type: (str, List[str]) -> Optional[ModificableMessage]
     modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
@@ -446,5 +446,3 @@ def process(message, locales = ["en-US"]):
     if modificableMessage.isModified():
         return modificableMessage.getText()
     return None
-
-process("I'm 4 foot 9 pounds")

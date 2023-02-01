@@ -6,11 +6,11 @@ class Filter:
 
     def apply(text):
         text = __apply_mention_everyone(text)
-        pass
+        return text
 
     def apply_strict(text):
         text = __apply_all_mentions(text)
-        pass
+        return text
 
     def __apply_mention_everyone(text):
         text = text.replace('@everyone', '@\u200beveryone')

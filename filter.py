@@ -8,7 +8,7 @@ class Filter:
         text = self.__apply_mention_everyone(text)
         return text
 
-    def apply_strict(text):
+    def apply_strict(self, text):
         text = self.__apply_all_mentions(text)
         return text
 

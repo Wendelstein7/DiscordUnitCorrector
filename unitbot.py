@@ -21,7 +21,7 @@ from datetime import datetime, date
 import discord
 from discord.ext import commands
 
-from filter
+import filter
 
 import unitconversion
 import unitpedialib
@@ -48,8 +48,8 @@ async def on_message(message):
     if bot.user.id is not message.author.id and message.author.bot is False and (message.guild is None or (message.guild is not None and discord.utils.get(message.guild.roles, name='imperial certified') not in message.author.roles)):
         processedMessage = unitconversion.process(message.content)
         if processedMessage is not None:
-            correctionText = ("I think " + Filter.apply_strict(message.author.display_name if message.guild is not None else "you") +
-                              " meant to say: ```" + Filter.apply_strict(processedMessage) + "```")
+            correctionText = ("I think " + filter.apply_strict(message.author.display_name if message.guild is not None else "you") +
+                              " meant to say: ```" + filter.apply_strict(processedMessage) + "```")
             await message.channel.send(correctionText)
     await bot.process_commands(message)
 

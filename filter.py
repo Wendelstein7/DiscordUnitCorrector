@@ -4,19 +4,19 @@ class Filter:
     def init(self):
         pass
 
-    def apply(text):
-        text = __apply_mention_everyone(text)
+    def apply(self, text):
+        text = self.__apply_mention_everyone(text)
         return text
 
     def apply_strict(text):
-        text = __apply_all_mentions(text)
+        text = self.__apply_all_mentions(text)
         return text
 
-    def __apply_mention_everyone(text):
+    def __apply_mention_everyone(self, text):
         text = text.replace('@everyone', '@\u200beveryone')
         text = text.replace('@here', '@\u200bhere')
         return text
 
-    def __apply_all_mentions(text):
+    def __apply_all_mentions(self, text):
         text = text.replace('@', '@\u200b')
         return text

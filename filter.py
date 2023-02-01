@@ -1,0 +1,22 @@
+class Filter:
+    '''Hasty hot fix module, used to prevent @everyone and @here mentions.'''
+
+    def init(self):
+        pass
+
+    def apply(text):
+        text = __apply_mention_everyone(text)
+        pass
+
+    def apply_strict(text):
+        text = __apply_all_mentions(text)
+        pass
+
+    def __apply_mention_everyone(text):
+        text = text.replace('@everyone', '@\u200beveryone')
+        text = text.replace('@here', '@\u200bhere')
+        return text
+
+    def __apply_all_mentions(text):
+        text = text.replace('@', '@\u200b')
+        return text

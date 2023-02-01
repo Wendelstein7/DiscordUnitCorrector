@@ -2,7 +2,7 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-import discord
+import discord # type: ignore
 import re
 
 def lookup(search):

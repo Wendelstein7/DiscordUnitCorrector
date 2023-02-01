@@ -4,47 +4,74 @@
 
 # Licenced under: MIT License, Copyright (c) 2018 Wendelstein7 and ficolas2
 
-import re
+from typing import Any, Callable, Dict, Optional, Tuple, Union, List
+from math import log10
 from abc import abstractmethod
-from math import log10, floor
+import re
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
-REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
+from compiledregexes import *
+from stringcompromise import compromiseBetweenStrings
+from modificablemessage import ModificableMessage
+from numberparsing import NUMBER_PARSERS, NumberParser, ParserSupportsSigFigs
+from sigfigs import SigFigCompliantNumber
 
-UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
-SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
-USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
-SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
-DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
-
-def roundsignificant(number):
-    if number == 0:
-        return 0
-    return round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1)
+SIGFIG_COMPLIANCE_LEVEL = 500   # Option: How hard should the bot try to follow sig figs, at the expense of readability?
+                                # Value is an int from 0 to 1000, where largest is most copmliant and least readable. DEFAULT: 500
+ASSUME_DECIMAL_INCHES = True    # Option: Should the notation 5'4.25 be assumed to be a foot-inch measurement, or will only integral
+                                # values like 5'4 be implicitaly assumed to have inch measurements?
 
 class UnitType:
 
     def __init__( self ):
-        self._multiples = {}
+        self._multiples = {} # type: Dict[float, str]
+        self._cutoffs = {} # type: Dict[float, float]
+        self._labelStrings = [] # type: List[str]
+        unitTypes.append(self)
 
-    def addMultiple( self, unit, multiple ):
+    def addMultiple( self, unit, multiple, cutoff = 0.5 ):
+        # type: (str, float, float) -> UnitType
         self._multiples[ multiple ] = unit
+        self._cutoffs[ multiple ] = cutoff
+        self._labelStrings.append(unit)
         return self
 
-    def getStringFromMultiple(self, value, multiple):
-        numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
-        if numberString[-2:] == ".0":
-            numberString = numberString[:-2]
-        return numberString + SPACED + self._multiples[multiple]
+    def getStringFromMultiple( self, value, multiple, spacing, parser ):
+        # type: (Union[SigFigCompliantNumber, float], float, str, NumberParser) -> str
+        if (SIGFIG_COMPLIANCE_LEVEL <= 200 and isinstance(value, SigFigCompliantNumber)):
+            if not isinstance(parser, ParserSupportsSigFigs):
+                raise TypeError("SigFigCompliantNumbers should have parsers that are instances of ParserSupportsSigFigs")
+            numstr = str(value / multiple)
+            result = parser.getRadixRegex().search(numstr)
+            if (result is not None and result.end() == len(numstr)):
+                numstr = numstr[0:result.start()]
+            result = parser.getScinotRegex().search(numstr)
+            if (result is not None):
+                numstr = str(parser.parseNumber([numstr]))
+                if (parser.getScinotRegex().search(numstr) is None and parser.getRadixRegex().search(numstr) is not None):
+                    while numstr.endswith(parser.createValuelessDigit()):
+                        numstr = numstr[0:-len(parser.createValuelessDigit())]
+                    match = parser.getRadixRegex().finditer(numstr).__next__()
+                    if (match.end() == len(numstr)):
+                        numstr = numstr[0:match.start()]
+        else:
+            numstr = str(value / multiple)
+        return numstr + spacing + self._multiples[multiple]
 
-    def getString( self, value ):
+    def getString( self, value, spacing, parser ):
+        # type: (Union[SigFigCompliantNumber, float], str, NumberParser) -> str
         sortedMultiples = sorted(self._multiples, reverse=True)
         for multiple in sortedMultiples:
-            if abs(value) > multiple/2:
-                return self.getStringFromMultiple(value, multiple)
-        return self.getStringFromMultiple( value, sortedMultiples[-1] )
+            if abs(value) > multiple * self._cutoffs[multiple]:
+                return self.getStringFromMultiple( value, multiple, spacing, parser )
+        return self.getStringFromMultiple( value, sortedMultiples[-1], spacing, parser )
 
-DISTANCE = UnitType().addMultiple("m", 1).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
+    def getLabelStrings( self ):
+        # type: () -> List[str]
+        return self._labelStrings
+
+unitTypes = [] # type: List[UnitType]
+
+DISTANCE = UnitType().addMultiple("m", 1, 3.5).addMultiple( "km", 10**3 ).addMultiple( "cm", 10**-2).addMultiple( "mm", 10**-3).addMultiple( "µm", 10**-6).addMultiple( "nm", 10**-9).addMultiple( "pm", 10**-12 )
 AREA = UnitType().addMultiple( "m²", 1 ).addMultiple( "km²", 10**6 ).addMultiple( "cm²", 10**-4).addMultiple( "mm²", 10**-6)
 VOLUME = UnitType().addMultiple( "L", 1 ).addMultiple( "mL", 10**-3 ).addMultiple( "µL", 10**-6 ).addMultiple( "nL", 10**-9 ).addMultiple( "pL", 10**-12 )
 ENERGY = UnitType().addMultiple( "J", 1 ).addMultiple( "TJ", 10**12 ).addMultiple( "GJ", 10**9 ).addMultiple( "MJ", 10**6 ).addMultiple( "kJ", 10**3 ).addMultiple( "mJ", 10**-3 ).addMultiple( "µJ", 10**-6 ).addMultiple( "nJ", 10**-9 )
@@ -57,180 +84,365 @@ PRESSURE = UnitType().addMultiple( "atm", 1 )
 LUMINOUSINTENSITY = UnitType().addMultiple( "cd", 1 )
 POWER = UnitType().addMultiple( "W", 1 ).addMultiple( "pW", 10**-12 ).addMultiple( "nW", 10**-9 ).addMultiple( "µW", 10**-6 ).addMultiple( "mW", 10**-3 ).addMultiple( "kW", 10**3 ).addMultiple( "MW", 10**6 ).addMultiple( "GW", 10**9 ).addMultiple( "TW", 10**12 )
 
+LABEL_STRING_START_RGXS = [] # type: List[re.Pattern]
+for unitType in unitTypes:
+    for labelString in unitType.getLabelStrings():
+        LABEL_STRING_START_RGXS.append(re.compile("^"+re.escape(labelString)+"($|[^a-zA-Z])"))
+
 class Unit:
     def __init__( self, friendlyName, unitType, toSIMultiplication, toSIAddition ):
-        self._friendlyName = friendlyName
-        self._unitType = unitType
-        self._toSIMultiplication = toSIMultiplication
-        self._toSIAddition = toSIAddition
+        # type: (str, UnitType, float, float) -> None
+        self._friendlyName = friendlyName # type: str
+        self._unitType = unitType # type: UnitType
+        self._toSIMultiplication = toSIMultiplication # type: float
+        self._toSIAddition = toSIAddition # type: float
 
-    def toMetric( self, value ):
+    def toMetric( self, value, spacing, parser ):
+        # type: (Union[float, SigFigCompliantNumber], str, NumberParser) -> str
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
-        if self._toSIAddition == 0 and SIValue == 0:
-            return
-        return self._unitType.getString( SIValue )
+        if SIValue == 0:
+            if (SIGFIG_COMPLIANCE_LEVEL >= 900 and isinstance(SIValue, SigFigCompliantNumber)):
+                return str(SIValue) + spacing + self._unitType._multiples[1]
+            strs = parser.createStrings(0)
+            if (len(strs) > 1):
+                raise NotImplementedError("Does not yet support noncontiguous numbers!")
+            return strs[0] + spacing + self._unitType._multiples[1]
+        return self._unitType.getString( SIValue, spacing, parser )
 
     def getName( self ):
+        # type: () -> str
+        return self._friendlyName
+
+    def __str__(self):
         return self._friendlyName
 
     @abstractmethod
-    def convert( self, message ): pass
+    def convert( self, message, locale ):
+        # type: (ModificableMessage, NumberParser) -> None
+        pass
 
-def convertUnitInModificableMessage( message, unit_regex, toMetric ):
-    global SPACED
-    originalText = message.getText()
-    if UNICODEMINUS:
-        originalText = originalText.replace('−', '-')
-    iterator = unit_regex.finditer( originalText )
-    replacements = []
-    for find in iterator:
-        numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
-        if numberResult is not None:
-            initialSpaceCount = 0
-            prefix = ""
-            while (numberResult.group()[initialSpaceCount].isspace()):
-                prefix += numberResult.group()[initialSpaceCount]
-                initialSpaceCount += 1
-            old_spacing = SPACED
-            postSpaceCount = len(numberResult.group()) - 1
-            SPACED = ""
-            while (numberResult.group()[postSpaceCount].isspace()):
-                SPACED = numberResult.group()[postSpaceCount] + SPACED
-                postSpaceCount -= 1
-            metricValue = toMetric( float( numberResult.group().replace(",", ".") ) )
-            SPACED = old_spacing
-            if metricValue is None:
-                continue
-            repl = {}
-            repl[ "start" ] = numberResult.start()
-            repl[ "text"  ] = (prefix) + metricValue
-            repl[ "end" ] = find.end()
-            replacements.append(repl)
-    if len(replacements)>0:
-        lastPoint = 0
-        finalMessage = ""
-        for repl in replacements:
-            finalMessage += originalText[ lastPoint: repl[ "start" ] ] + repl[ "text" ]
-            lastPoint = repl["end"]
-        finalMessage += originalText[ lastPoint : ]
-        message.setText(finalMessage)
-
+class SupportsSuperunit(Unit):
+    # this class is a stub, because I'm not sure what to put here because there's not utilization of the generality it provides, yet
+    pass
 
 #NormalUnit class, that follow number + unit name.
-class NormalUnit( Unit ):
-    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
+class NormalUnit( SupportsSuperunit, Unit ):
+    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, UnitType, float, float, SupportsSuperunit) -> None
         super( NormalUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))", re.IGNORECASE )
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-z]))", re.IGNORECASE ) # type: re.Pattern
+        self._key = self # type: SupportsSuperunit
+        if key is not None:
+            self._key = key
 
-    def convert( self, message ):
-        convertUnitInModificableMessage( message, self._regex, self.toMetric )
+    def convert( self, message, locale ):
+        # type: (ModificableMessage, NumberParser) -> None
+        originalText = message.getText()
+        iterator = self._regex.finditer( originalText )
+        replacements = []
+        for find in iterator:
+            preunitstr = originalText[ 0 : find.start() ]
+            value = self.getValueFromIteration(preunitstr, locale, [])
+            if value is None:
+                continue
+            (preunitstr, usernumber, spacings, conversionFormula) = value
+            end = find.end()
+            # here lies one of the extremely special cases
+            if (self._friendlyName == "foot"):
+                end2 = SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(originalText[end:]).__next__().end() + end
+                (numstrings, remstrs) = locale.takeNumberFromStringStart(originalText[end2:], False)
+                if len(numstrings) > 0:
+                    if (len(numstrings) > 1 or len(remstrs) > 1):
+                        raise NotImplementedError("Does not yet support noncontiguous numbers!")
+                    numstring = numstrings[0]
+                    remstr = "" if len(remstrs) == 0 else remstrs[0]
+                    spclen = NUMBER_UNIT_SPACERS_START_RGX.finditer(remstr).__next__().end()
+                    remstr = remstr[spclen:]
+                    end2 += len(numstring)
+                    belongstoother=False
+                    for unit in units:
+                        if (isinstance(unit, NormalUnit)):
+                            pmatch = unit._regex.search(remstr)
+                            if ((pmatch is not None) and (pmatch.start() == 0)):
+                                belongstoother = True
+                                break
+                        else:
+                            raise NotImplementedError("Cannot ensure number is not explicitly part of unit " + str(unit) + " of type " + str(type(unit)) + "!")
+                    for labelStringRgx in LABEL_STRING_START_RGXS:
+                        if (labelStringRgx.search(remstr) is not None):
+                            belongstoother = True
+                            break
+                    if not belongstoother:
+                        if isinstance(locale, ParserSupportsSigFigs):
+                            actualnumSFcompli = SigFigCompliantNumber(numstring, locale)
+                            if actualnumSFcompli < 12 and actualnumSFcompli >= 0:
+                                radixcheck = locale.getRadixRegex().search(numstring)
+                                if (radixcheck is None) or (radixcheck.end() == len(numstring)) or ASSUME_DECIMAL_INCHES:
+                                    ratio = 12
+                                    terminatingradix = (radixcheck is not None) and (radixcheck.end() == len(numstring))
+                                    end = end2 if not terminatingradix else end2-1
+                                    usernumber = actualnumSFcompli.addNumberOnLargerScale(usernumber, ratio, terminatingradix) / ratio
+                        else:
+                            actualnum = locale.parseNumber([numstring])
+                            if not isinstance(usernumber, (int, float)):
+                                raise RuntimeError("Inconsistent internal behavior!")
+                            if actualnum < 12 and actualnum >= 0:
+                                ratio = 12
+                                usernumber = actualnum / ratio + usernumber
+                                end = end2
+            if (SIGFIG_COMPLIANCE_LEVEL <= 600 and isinstance(usernumber, SigFigCompliantNumber)):
+                # special sig fig cases that assume what people mean by colloquial measurements rather than strictly using what they say
+                if (self._friendlyName == "inch"):
+                    if (usernumber / (10**int(log10(usernumber._value))) > 10 / 2.54):
+                        usernumber._leastSignificantDigit += 1
+                        usernumber._numSigFigs += 1
+                if (self._friendlyName == "foot"):
+                    if (usernumber / (10**int(log10(usernumber._value))) > 10 / 3.048):
+                        usernumber._leastSignificantDigit += 1
+                        usernumber._numSigFigs += 1
+            metricValue = conversionFormula(usernumber, compromiseBetweenStrings(spacings), locale)
+            repl = {} # type: Dict[str, Any]
+            repl[ "start" ] = len(preunitstr)
+            repl[ "text"  ] = metricValue
+            repl[ "end" ] = end
+            replacements.append(repl)
+        if len(replacements)>0:
+            lastPoint = 0
+            finalMessage = ""
+            for repl in replacements:
+                finalMessage += originalText[ lastPoint: repl[ "start" ] ] + repl[ "text" ]
+                lastPoint = repl["end"]
+            finalMessage += originalText[ lastPoint : ]
+            message.setText(finalMessage)
 
-class CaseSensitiveUnit( Unit ):
-    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0 ):
-        super( CaseSensitiveUnit, self ).__init__( friendlyName, unitType, toSIMultiplication, toSIAddition )
-        self._regex = re.compile( "(" + regex + ")(?=[!?.,()\"\']*(\\s|$))" )
-    
-    def convert( self, message ):
-        return convertUnitInModificableMessage( message, self._regex, self.toMetric)
+    def getValueFromIteration(
+            self,
+            string, # type: str
+            parser, # type: NumberParser
+            spacings = [] # type: List[str]
+    ):
+        # type: (...) -> Optional[Tuple[str, Union[SigFigCompliantNumber, float], List[str], Callable[[Union[float, SigFigCompliantNumber], str, NumberParser], str]]]
+        spacerRes = NUMBER_UNIT_SPACERS_END_RGX.finditer(string).__next__()
+        spacing = spacerRes.group()
+        preunitstr = string[ 0 : spacerRes.start() ]
+        read = parser.takeNumberFromStringEnd(preunitstr)
+        if len(read[0]) == 0:
+            return None
+        (nums, notnums) = read
+        if (len(nums) > 1 or len(notnums) > 1):
+            raise NotImplementedError("Noncontinguous numbers not supported!")
+        usernumber = 0 # type: Union[SigFigCompliantNumber, float]
+        if isinstance(parser, ParserSupportsSigFigs):
+            usernumber = SigFigCompliantNumber(nums[0], parser)
+        else:
+            usernumber = parser.parseNumber(nums)
+        preunitstr = "" if len(notnums) == 0 else notnums[0]
+        spacer = SUPERUNIT_SUBUNIT_SPACER_END_RGX.finditer(preunitstr).__next__()
+        nextunitstr = preunitstr[0:spacer.start()]
+        match = None
+        for superunit in superunits[self._key]:
+            if (isinstance(superunit[0], NormalUnit)):
+                match = superunit[0]._regex.search(nextunitstr)
+                if match is None:
+                    continue
+                value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
+                if value is None:
+                    continue
+                if ((len(SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(nums[0]).__next__().group()) > 0) and (spacer.span()[1] == spacer.span()[0])):
+                    nums[0] = nums[0][1:]
+                    if (len(nums) > 1 or len(notnums) > 1):
+                        raise NotImplementedError("Noncontinguous numbers not supported!")
+                    if isinstance(parser, ParserSupportsSigFigs):
+                        usernumber = SigFigCompliantNumber(nums[0], parser)
+                    else:
+                        usernumber = parser.parseNumber(nums)
+                (preunitstr, supernumber, spacings, _) = value
+                ratio = superunit[1]
+                if isinstance(usernumber, SigFigCompliantNumber):
+                    if not isinstance(parser, ParserSupportsSigFigs):
+                        raise RuntimeError("Inconsistent internal behavior!")
+                    usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
+                else:
+                    usernumber = usernumber + supernumber * ratio
+                break
+            else:
+                raise NotImplementedError("Superuniting is not supported for unit type " + str(type(potentialsuperunit)) + "!")
+        conversionFormula = self.toMetric
+        # here lies one of the extremely special cases
+        if (match is None and self._friendlyName == "ounce"):
+            for superunit in superunits[unit_by_name_lookup["fluid ounce"]]:
+                if (isinstance(superunit[0], NormalUnit)):
+                    match = superunit[0]._regex.search(nextunitstr)
+                    if match is None:
+                        continue
+                    value = superunit[0].getValueFromIteration(preunitstr[0:match.start()], parser, spacings)
+                    if value is None:
+                        continue
+                    if ((len(SUPERUNIT_SUBUNIT_SPACER_START_RGX.finditer(nums[0]).__next__().group()) > 0) and (spacer.span()[1] == spacer.span()[0])):
+                        nums[0] = nums[0][1:]
+                        if (len(nums) > 1 or len(notnums) > 1):
+                            raise NotImplementedError("Noncontinguous numbers not supported!")
+                        if isinstance(parser, ParserSupportsSigFigs):
+                            usernumber = SigFigCompliantNumber(nums[0], parser)
+                        else:
+                            usernumber = parser.parseNumber(nums)
+                    (preunitstr, supernumber, spacings, _) = value
+                    ratio = superunit[1]
+                    if isinstance(usernumber, SigFigCompliantNumber):
+                        if not isinstance(parser, ParserSupportsSigFigs):
+                            raise RuntimeError("Inconsistent internal behavior!")
+                        usernumber = usernumber.addNumberOnLargerScale(supernumber, ratio, parser.getRadixRegex().search(nums[0]) is not None)
+                    else:
+                        usernumber = usernumber + supernumber * ratio
+                    conversionFormula = unit_by_name_lookup["fluid ounce"].toMetric
+                    break
+        spacings.insert(0, spacing)
+        return (preunitstr, usernumber, spacings, conversionFormula)
 
-# Class containing a string, for the modificable message, and a boolean
-# to indicate if the message has been modified
-class ModificableMessage:
+class CaseSensitiveNormalUnit( NormalUnit ):
+    def __init__( self, friendlyName, regex, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, UnitType, float, float, SupportsSuperunit) -> None
+        super( CaseSensitiveNormalUnit, self ).__init__( friendlyName, "(placeholder)", unitType, toSIMultiplication, toSIAddition, key )
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))" )
 
-    def __init__(self, text):
-        self._text = text
-        self._modified = False
+class RegexFlagsExposedNormalUnit( NormalUnit ):
+    def __init__( self, friendlyName, regex, flags, unitType, toSIMultiplication, toSIAddition = 0, key = None ):
+        # type: (str, str, int, UnitType, float, float, SupportsSuperunit) -> None
+        super( RegexFlagsExposedNormalUnit, self ).__init__( friendlyName, "(placeholder)", unitType, toSIMultiplication, toSIAddition, key )
+        self._regex = re.compile( "(" + regex + ")((?=$)|(?=[^a-zA-Z]))", flags )
 
-    def getText(self):
-        return self._text
+units = [] # type: List[Unit]
 
-    def setText(self, text):
-        self._text = text
-        self._modified = True
-
-    def isModified(self):
-        return self._modified
-
-units = []
+# every unit must be defined before its superunits, so unit definitions are sorted by size
 
 #Area
 units.append( NormalUnit( "inch squared", "in(ch(es)?)? ?(\^2|squared|²)", AREA, 0.00064516 ) )     #inch squared
-units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", AREA, 0.092903 ) )         #foot squared
-units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", AREA, 2589990 ) )           #mile squared
+units.append( NormalUnit( "foot squared", "f(oo|ee)?t ?(\^2|squared|²)", AREA, 0.09290304 ) )       #foot squared
+units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141056 ) )                                  #rood
 units.append( NormalUnit( "acre", "acres?", AREA, 4046.8564224 ) )                                  #acre
-units.append( NormalUnit( "rood", "roods?", AREA, 1011.7141 ) )                                     #rood
+units.append( NormalUnit( "mile squared", "mi(les?)? ?(\^2|squared|²)", AREA, 2589988.110336 ) )    #mile squared
+
+#Mass
+units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                          #grains
+units.append( NormalUnit( "pennyweight", "penny ?weights?|dwt", MASS, 1.55517384 ) )        #pennywheight
+units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                       #drams
+units.append( NormalUnit( "ounce", "ounces?|(oz(?! t))", MASS, 28.349523125 ) )             #ounces
+units.append( NormalUnit( "troy ounce", "troy ?ounces?|oz t", MASS, 31.1034768 ) )          #troy ounces
+units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )              #troy pound
+units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                      #pounds
+units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.29318 ) )                 #stones
+units.append( NormalUnit( "slug", "slugs?", MASS, 14593.90293720636482939632545931759 ) )   #slug
+units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802.34544 ) )     #hundredweights
 
 #Volume
-units.append( NormalUnit( "pint", "pints?|pt", VOLUME, 0.473176 ) )                     #pint
-units.append( NormalUnit( "quart", "quarts?|qt", VOLUME, 0.946353 ) )                   #quart
-units.append( NormalUnit( "gallon", "gal(lons?)?", VOLUME, 3.78541 ) )                  #gallon
-units.append( NormalUnit( "fluid ounce", "fl\.? oz\.?", VOLUME, 0.0295735296 ) )        #fluid ounce
-units.append( NormalUnit( "teaspoon", "tsp|teaspoons?", VOLUME, 0.00492892159 ) )       #US teaspoon
-units.append( NormalUnit( "tablespoon", "tbsp|tablespoons?", VOLUME, 0.0147867648 ) )   #US tablespoon
-units.append( NormalUnit( "barrel", "drum|barrels?", VOLUME, 119.240471 ) )             #barrel
-units.append( NormalUnit( "peck", "pecks?", VOLUME, 8.809768 ) )                        #pecks
-units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )              #bushels
+units.append( NormalUnit( "teaspoon", "tsp|teaspoons?", VOLUME, 0.00492892159375 ) )                 #US teaspoon
+units.append( NormalUnit( "tablespoon", "tbsp|tablespoons?", VOLUME, 0.01478676478125 ) )            #US tablespoon
+units.append( NormalUnit( "fluid ounce", "fl(\\.|uid)? o(z\\.?|unces)", VOLUME, 0.0295735295625 ) )  #fluid ounce
+units.append( NormalUnit( "pint", "pints?|pt", VOLUME, 0.473176473 ) )                               #pint
+units.append( NormalUnit( "quart", "quarts?|qt", VOLUME, 0.946352946 ) )                             #quart
+units.append( NormalUnit( "gallon", "gal(lons?)?", VOLUME, 3.785411784 ) )                           #gallon
+units.append( NormalUnit( "peck", "pecks?", VOLUME, 8.80976754172 ) )                                #pecks
+units.append( NormalUnit( "bushel", "bushels?", VOLUME, 35.23907016688 ) )                           #bushels
+units.append( NormalUnit( "barrel", "drum|barrels?", VOLUME, 158.987294928) )                        #barrel
 
 #Energy
-units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.355818 ) )                 #foot-pound
-units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.06 ) )                                 #British thermal unit
-units.append( CaseSensitiveUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                               #calories
-units.append( CaseSensitiveUnit( "kilocalories", "(k(ilo)?c|C)al(ories?)?", ENERGY, 4184 ) )       #kilocalories
-units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER, 3500 ) )                    #ton of refrigeration
 units.append( NormalUnit( "ergs", "ergs?", ENERGY, 10**-7 ) )                                                #ergs
+units.append( NormalUnit( "foot-pound", "ft( |\*)?lbf?|foot( |-)pound", ENERGY, 1.3558179483314004 ) )       #foot-pound
+units.append( CaseSensitiveNormalUnit( "calories", "cal(ories?)?", ENERGY, 4.184 ) )                         #calories
+units.append( NormalUnit( "British thermal unit", "btu", ENERGY, 1055.05585262 ) )                           #British thermal unit
+units.append( CaseSensitiveNormalUnit( "kilocalories", "(k(ilo)?c|C)al(ories?)?", ENERGY, 4184 ) )           #kilocalories
 
 #Force
-units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.448222 ) )            #pound-force
+units.append( NormalUnit( "pound-force", "pound( |-)?force|lbf", FORCE, 4.4482216152605 ) )            #pound-force
 
 #Torque
-units.append( NormalUnit( "pound-foot", "Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.355818 ) )      #pound-foot
+units.append( NormalUnit( "pound-foot", "Pound(-| )?(f(oo|ee)?t)|lbf( |\*)?ft", TORQUE, 1.3558179483314004 ) )      #pound-foot
 
 #Velocity
-units.append( NormalUnit( "miles per hour", "miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )             #miles per hour
-units.append( NormalUnit( "knot", "knots?|kts?", VELOCITY, 0.51444444444 ) )                              #knots
 units.append( NormalUnit( "feet per second", "f(oo|ee)?t ?(per|/|p) ?s(ec|onds?)?", VELOCITY, 0.3048 ) )  #feet per second
+units.append( NormalUnit( "miles per hour", "miles? per hour|mph|mi/h", VELOCITY, 0.44704 ) )             #miles per hour
+units.append( NormalUnit( "knot", "knots?|kts?", VELOCITY, 1852 / 3600 ) )                                #knots
 
 #Temperature
 units.append( NormalUnit( "degrees fahrenheit", "((°|º|deg(ree)?s?) ?)?(fahrenheit|freedom|f)", TEMPERATURE, 5/9, -32 ) )  #Degrees freedom
 units.append( NormalUnit( "degrees rankine", "((°|º|deg(ree)?s?) ?)?(ra?(nkine)?)", TEMPERATURE, 5/9, -491.67 ) )          #Degrees rankine
 
 #Pressure
-units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.068046 ) ) #Pounds per square inch
-
-#Mass
-units.append( NormalUnit( "ounce", "ounces?|oz", MASS, 28.349523125 ) )                  #ounces
-units.append( NormalUnit( "pound", "pounds?|lbs?", MASS, 453.59237 ) )                   #pounds
-units.append( NormalUnit( "stone", "stones?|(?<!1)st", MASS, 6350.2293318 ) )            #stones
-units.append( NormalUnit( "grain", "grains?", MASS, 0.06479891 ) )                       #grains
-units.append( NormalUnit( "slug", "slugs?", MASS, 14593.9029 ) )                         #slug
-units.append( NormalUnit( "troy ounce", "troy ?ounces?", MASS, 31.1034768 ) )            #troy ounces
-units.append( NormalUnit( "pennyweight", "penny ?weights?", MASS, 1.55517384 ) )         #pennywheight
-units.append( NormalUnit( "troy pound", "troy ?pounds?", MASS, 373.2417216 ) )           #troy pound
-units.append( NormalUnit( "dram", "drams?", MASS, 1.7718451953125 ) )                    #drams
-units.append( NormalUnit( "hundredweight", "hundredweights?|cwt", MASS, 50802 ) )        #hundredweights
+units.append( NormalUnit( "pound per square inch", "pounds?((-| )?force)? per square in(ch)?|lbf\/in\^2|psi", PRESSURE, 0.0680459639098777333996809617108008 ) ) #Pounds per square inch
 
 #Distance
-units.append( NormalUnit( "inch", "inch(es)?", DISTANCE, 0.0254 ) )                           #inch
-units.append( NormalUnit( "foot", "f(oo|ee)?t", DISTANCE, 0.3048 ) )                      #foot
-units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                         #mile
-units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                           #yard
-units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )   #nautical miles
-units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                             #thou
-units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                          #fathom
-units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.1680 ) )                      #furlong
-units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )               #rack units
-units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                            #Smoot units
+units.append( NormalUnit( "thou", "thou", DISTANCE, 0.0000254 ) )                                   #thou
+units.append( NormalUnit( "inch", "\"|in(ch(es)?)?", DISTANCE, 0.0254 ) )                           #inch
+units.append( NormalUnit( "rack unit", "rack ?units?|ru", DISTANCE, 0.04445 ) )                     #rack units
+units.append( NormalUnit( "foot", ALL_PRIMES_RGX_STR+"|f(oo|ee)?t", DISTANCE, 0.3048 ) )            #foot
+units.append( NormalUnit( "yard", "yd|yards?", DISTANCE, 0.9144 ) )                                 #yard
+units.append( NormalUnit( "smoot", "smoots?", DISTANCE, 1.7018 ) )                                  #Smoot units
+units.append( NormalUnit( "fathom", "fathoms?", DISTANCE, 1.8288 ) )                                #fathom
+units.append( NormalUnit( "furlong", "furlongs?", DISTANCE, 201.168 ) )                             #furlong
+units.append( NormalUnit( "mile", "mi(les?)?", DISTANCE, 1609.344 ) )                               #mile
+units.append( NormalUnit( "nautical mile", "nautical ?(mi(les?)?)?|nmi", DISTANCE, 1852 ) )         #nautical miles
 
 #Luminous intensity
 #units.append( NormalUnit( "Lumen", "lumens?|lm", LUMINOUSINTENSITY, 1 ) )          #lumens
 
 #Power
-units.append( NormalUnit( "horsepower", "horse ?power", POWER, 745.699872 ) )         #horsepower
+units.append( NormalUnit( "horsepower", "horse ?power", POWER, 745.69987158227022 ) )                            #horsepower
+units.append( NormalUnit( "ton of refrigeration", "ton of refrigeration", POWER, 10550.5585262 / 3 ) )           #ton of refrigeration
 
-#Processes a string, converting freedom units to science units.
-def process(message):
-    modificableMessage = ModificableMessage(REMOVE_REGEX.sub("", message))
+# END UNIT DEFINITIONS
+# BEGIN SUPERUNIT DEFINITIONS
+
+superunits = {} # type: Dict[Unit, List[Tuple[SupportsSuperunit, int]]]
+superunits_by_name_lookup = {} # type: Dict[str, SupportsSuperunit]
+unit_by_name_lookup = {} # type: Dict[str, Unit]
+for key in units:
+    superunits[key] = []
+    if (key._toSIAddition != 0):
+        continue
+    for potentialsuperunit in units:
+        if (key._unitType != potentialsuperunit._unitType):
+            continue
+        if (key == potentialsuperunit):
+            continue
+        if (potentialsuperunit._toSIAddition != 0):
+            continue
+        ratio = potentialsuperunit._toSIMultiplication / key._toSIMultiplication
+        if (abs(ratio - round(ratio)) > 1.0e-6):
+            continue
+        ratio = round(ratio)
+        if (ratio <= 1):
+            continue
+        if (isinstance(potentialsuperunit, NormalUnit)):
+            superunits[key].append((RegexFlagsExposedNormalUnit(
+                potentialsuperunit._friendlyName,
+                potentialsuperunit._regex.pattern + "(?=$)",
+                potentialsuperunit._regex.flags,
+                potentialsuperunit._unitType,
+                potentialsuperunit._toSIMultiplication,
+                potentialsuperunit._toSIAddition, # this is always zero
+                potentialsuperunit
+            ), ratio))
+            superunits_by_name_lookup[potentialsuperunit._friendlyName] = RegexFlagsExposedNormalUnit(
+                potentialsuperunit._friendlyName,
+                potentialsuperunit._regex.pattern + "(?=$)",
+                potentialsuperunit._regex.flags,
+                potentialsuperunit._unitType,
+                potentialsuperunit._toSIMultiplication,
+                potentialsuperunit._toSIAddition, # this is always zero
+                potentialsuperunit
+            )
+        else:
+            if isinstance(potentialsuperunit, SupportsSuperunit):
+                raise NotImplementedError("Superuniting is not supported for unit type " + str(type(potentialsuperunit)) + "!")
+    unit_by_name_lookup[key._friendlyName] = key
+
+# Processes a string, converting freedom units to science units.
+def process(message, locales = ["en-US"]):
+    # type: (str, List[str]) -> Optional[ModificableMessage]
+    modificableMessage = ModificableMessage(message) # REMOVE_REGEX.sub("", message)
     for u in units:
-        u.convert(modificableMessage)
+        for locale in locales:
+            u.convert(modificableMessage, NUMBER_PARSERS[locale])
     if modificableMessage.isModified():
         return modificableMessage.getText()
+    return None

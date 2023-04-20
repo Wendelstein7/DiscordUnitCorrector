@@ -26,8 +26,13 @@ import filter
 import unitconversion
 import unitpedialib
 
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guild_messages = True
+intents.messages = True
+
 description = """UnitCorrector: A community-beveloped open source Discord bot that corrects non-SI units to SI ones! Also features a !unitpedia command, allowing users to learn about (all) units."""
-bot = commands.Bot(command_prefix='!', description=description)
+bot = commands.Bot(command_prefix='!', description=description, intents=intents)
 
 starttime = datetime.utcnow()
 longprefix = ':symbols: UnitCorrector | '

@@ -6,21 +6,17 @@
 
 import re
 from abc import abstractmethod
-from math import log10, floor
+from sigfigs import SigFigCompliantNumber
 
-END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]+)?\s*$")
+END_NUMBER_REGEX = re.compile("(^|\s)(-|−)?[0-9]+([\,\.][0-9]*)?\s*$")
 REMOVE_REGEX = re.compile("((´|`)+[^>]+(´|`)+)")
 
 UNICODEMINUS = True    # Option: Should UNICODE minus symbol '−' be converted to a standard dash '-'?
 SPACED = " "    # Option: What should separate the number and the unit? DEFAULT: one space (" ")
-USESIGNIFICANT = True    # Option: Should rounding be done using significancy? If false, rounding will be done using decimal places. DEFAULT: True
-SIGNIFICANTFIGURES = 3    # Option: The amount of significant digits that will be kept when rounding.  Ignored when USESIGNIFICANT = False. DEFAULT: 3
-DECIMALS = 2    # Option: The amount of decimals to output after conversion. Ignored when USESIGNIFICANT = True. DEFAULT: 2
 
-def roundsignificant(number):
-    if number == 0:
-        return 0
-    return round(number, -int(floor(log10(abs(number))))+SIGNIFICANTFIGURES-1)
+SIGFIG_COMPLIANCE_LEVEL = 1 # Option: How hard should the bot try to follow sig figs, at the expense of readability?
+                            # Value is an int from 0 to 2, where largest is most copmliant and least readable. DEFAULT: 1
+USE_TENPOW = False          # Option: Should outputs in scientific notation be like `4*10^3` instead of `4e+3`? DEFAULT: False
 
 class UnitType:
 
@@ -32,10 +28,18 @@ class UnitType:
         return self
 
     def getStringFromMultiple(self, value, multiple):
-        numberString = str((roundsignificant(value / multiple) if USESIGNIFICANT else round(value / multiple, DECIMALS)))
-        if numberString[-2:] == ".0":
-            numberString = numberString[:-2]
-        return numberString + SPACED + self._multiples[multiple]
+        numstr = str(value / multiple)
+        if (SIGFIG_COMPLIANCE_LEVEL == 0):
+            if (numstr[len(numstr)-1] == '.'):
+                numstr = numstr[0:-1]
+            if ("e" in numstr):
+                numstr = str(float(numstr))
+                if (not "e" in numstr and numstr.endswith(".0")):
+                    numstr = numstr[0:-2]
+        if (USE_TENPOW):
+            numstr = numstr.replace("e+", "*10^")
+            numstr = numstr.replace("e", "*10^")
+        return numstr + SPACED + self._multiples[multiple]
 
     def getString( self, value ):
         sortedMultiples = sorted(self._multiples, reverse=True)
@@ -66,8 +70,14 @@ class Unit:
 
     def toMetric( self, value ):
         SIValue = ( value + self._toSIAddition ) * self._toSIMultiplication
-        if self._toSIAddition == 0 and SIValue == 0:
-            return
+        if SIValue == 0:
+            if (SIGFIG_COMPLIANCE_LEVEL == 2):
+                numstr = str(SIValue)
+                if USE_TENPOW:
+                    numstr = numstr.replace("e+", "*10^")
+                    numstr = numstr.replace("e", "*10^")
+                return numstr + SPACED + self._unitType._multiples[1]
+            return "0" + SPACED + self._unitType._multiples[1]
         return self._unitType.getString( SIValue )
 
     def getName( self ):
@@ -86,6 +96,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
     for find in iterator:
         numberResult = END_NUMBER_REGEX.search( originalText[ 0 : find.start() ] )
         if numberResult is not None:
+            usernumber = SigFigCompliantNumber(numberResult.group().strip().replace(",", "."))
             initialSpaceCount = 0
             prefix = ""
             while (numberResult.group()[initialSpaceCount].isspace()):
@@ -97,7 +108,7 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             while (numberResult.group()[postSpaceCount].isspace()):
                 SPACED = numberResult.group()[postSpaceCount] + SPACED
                 postSpaceCount -= 1
-            metricValue = toMetric( float( numberResult.group().replace(",", ".") ) )
+            metricValue = toMetric( usernumber )
             SPACED = old_spacing
             if metricValue is None:
                 continue
@@ -114,7 +125,6 @@ def convertUnitInModificableMessage( message, unit_regex, toMetric ):
             lastPoint = repl["end"]
         finalMessage += originalText[ lastPoint : ]
         message.setText(finalMessage)
-
 
 #NormalUnit class, that follow number + unit name.
 class NormalUnit( Unit ):

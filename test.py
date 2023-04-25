@@ -4,6 +4,7 @@
 # To start unit tests run:
 # python test.py -v
 
+from sigfigs import SigFigCompliantNumber
 import unittest
 from argparse import ArgumentParser
 
@@ -25,8 +26,8 @@ if message:
 class TestUnitCorrection(unittest.TestCase):
     def test_base_unit_conversion(self):
         unit_pairs = [
-            ["10 feet", "3.05 m"],
-            ["10feet", "3.05m"],
+            ["10 feet", "3 m"],
+            ["10feet", "3m"],
         ]
 
         for pair in unit_pairs:
@@ -60,11 +61,11 @@ class TestUnitCorrection(unittest.TestCase):
 
     def test_square_units(self):
         unit_pairs = [
-            ["10 feet²", "0.929 m²"],
-            ["4 acres", "16200 m²"],
-            ["4 roods", "4050 m²"],
-            ["4 miles²", "10.4 km²"],
-            ["4 ft²", "3720 cm²"]
+            ["10.0 feet²", "0.929 m²"],
+            ["4.0 acres", "16000 m²"],
+            ["4 roods", "4000 m²"],
+            ["4 miles²", "10 km²"],
+            ["4.000 ft²", "3716 cm²"]
         ]
 
         for pair in unit_pairs:
@@ -75,13 +76,30 @@ class TestUnitCorrection(unittest.TestCase):
     
     def test_case_sensitive(self):
         unit_pairs = [
-            ["4 calories", "16.7 J"],
-            ["4 Calories", "16.7 kJ"],
-            ["4 kilocalories", "16.7 kJ"],
-            ["4 kcalories", "16.7 kJ"],
+            ["4 calories", "20 J"],
+            ["4 Calories", "20 kJ"],
+            ["4 kilocalories", "20 kJ"],
+            ["4 kcalories", "20 kJ"],
             ["4 kiloCalories", None],
             ["4 kCalories", None],
-            ["wow  4  calories  cool", "wow  16.7  J  cool"]
+            ["wow  4  calories  cool", "wow  20  J  cool"]
+        ]
+
+        for pair in unit_pairs:
+            raw_unit = pair[0]
+            expected_unit = pair[1]
+            result = unitconversion.process(raw_unit)
+            self.assertEqual(result, expected_unit)
+    
+    def test_sig_figs(self):
+        unit_pairs = [
+            ["4.004 ft²", "3720. cm²"],
+            ["1.2345678901234 inches", "3.1358024409134 cm"],
+            ["62. miles", "1.0e+2 km"],
+            ["62.2 miles", "100. km"],
+            ["6234 inches", "158.3 m"],
+            ["0.0 degrees freedom", "-17.8 °C"],
+            ["32.0 degrees freedom", "0 °C"]
         ]
 
         for pair in unit_pairs:
